@@ -1,1 +1,1 @@
-### This folder contains the sample CGE model
+### This folder contains the sample CGE model (SAM input, balancing, benchmarking, reporting code) with various checks
