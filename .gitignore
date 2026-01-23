@@ -1,0 +1,5 @@
+# --- Ignore temporary output from GAMS and editor ---
+*.lst
+*.log
+*.bak
+*.tmp
