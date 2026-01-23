@@ -61,6 +61,7 @@ model m_singleMarket "The simulation model" / e_sup.v_sup
 *     Uncomment one of the following lines to provoke an error in the model specification test
 *p_supElas("pigs") = -0.5;
 *p_demElas("poultry") = 0.6;
+*p_pBase("pigs") = 0;
 
 *     Supply elasticities must be positive
 p_problem1D(i) = min(0, p_supElas(i));
@@ -69,6 +70,11 @@ $batinclude ../shared/assert_no_problem.gms p_problem1D "Supply elasticities mus
 *     Demand elasticities must be negative
 p_problem1D(i) = max(0, p_demElas(i)); 
 $batinclude ../shared/assert_no_problem.gms p_problem1D "Demand elasticities must be negative"
+
+*     If there is a base quantity, there must also be a base price, and vice versa
+p_problem1D(i) = 1 $ p_qBase(i) 
+               - 1 $ p_pBase(i) ;
+$batinclude ../shared/assert_no_problem.gms p_problem1D "If there is a base quantity, there must also be a base price"
 
 
 * --- set start values and calculate constant terms
