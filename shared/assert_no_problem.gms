@@ -19,6 +19,10 @@ $ifi not set scrdir $setLocal scrdir ..\output\temp
 
 $iftheni.mode "%1"=="init"
 
+* --- Check if this include file has already been initialized
+
+    $$ifi set problemHandlerHasBeenInitialized $abort "Error in file in file %system.IncParent%. Error handler in assert_no_problem.gms has already been initialized. Include the file with 'init' only once."
+
 * --- Initialize error device
 
 *   Give a file name for unloading data in case of errors
@@ -40,10 +44,12 @@ $iftheni.mode "%1"=="init"
     option kill = p_problem4D;
     option kill = p_problem5D;
 
-
+    $$setGlobal problemHandlerHasBeenInitialized yes
 $else.mode
 
 * --- Check that a set is empty, otherwise unload data and abort with the error message provided by the caller
+
+    $$ifi not set problemHandlerHasBeenInitialized $abort "Error in file %system.IncParent%. Error handler in assert_no_problem.gms has not been initialized. Include the file with 'init' first."
 
     $$setLocal errorSet %1
     $$setLocal errorMessage %2
