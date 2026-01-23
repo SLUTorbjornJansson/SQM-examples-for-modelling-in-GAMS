@@ -16,12 +16,17 @@ $ontext
 $offtext
 ********************************************************************************
 
+* --- Initialize error catching mechanism
+$batinclude ../shared/assert_no_problem.gms init
+
+* --- Declare the sample model
+
  set i "Commodities" / pigs,poultry /;
 
 
  parameters
 
-   p_supElas(i) "Supply elasticities"   /  pigs 0.5,  poultry 0.3/
+   p_supElas(i) "Supply elasticities"   /  pigs -0.5,  poultry 0.3/
    p_demElas(i) "Demand elasticities"   / pigs -0.2, poultry -0.6 /
    p_cnstSup(i) "Constant term in supply function"
    p_cnstDem(i) "Constant term in demand function"
@@ -58,6 +63,16 @@ $offtext
  model m_singleMarket / e_sup.v_sup
                        e_dem.v_dem
                        e_mkt.v_p    /;
+
+* --- Check that model is correctly specified
+*     Supply elasticities must be positive
+p_problem1D(i) = min(0, p_supElas(i));
+$batinclude ../shared/assert_no_problem.gms p_problem1D "Supply elasticities must be positive"
+
+*     Demand elasticities must be negative
+p_problem1D(i) = max(0, p_demElas(i)); 
+$batinclude ../shared/assert_no_problem.gms p_problem1D "Demand elasticities must be negative"
+
 *
 * --- set start values and calculate constant terms
 *
@@ -82,7 +97,7 @@ $offtext
   p_res(i,"p_dem","bas") = v_p.l(i);
 
 *
-* --- remove subsidy and recalculate
+* --- Compute new market equilibrium with subsidy on pigs
 *
   p_subs("pigs") = 20;
   solve m_singleMarket using CNS;
