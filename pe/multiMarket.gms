@@ -57,7 +57,7 @@ model m_singleMarket "The simulation model" / e_sup.v_sup
                        e_dem.v_dem
                        e_mkt.v_p    /;
 
-* --- Check that model is correctly specified
+* ----- Check that model is correctly specified -----
 *     Uncomment one of the following lines to provoke an error in the model specification test
 *p_supElas("pigs") = -0.5;
 *p_demElas("poultry") = 0.6;
@@ -85,7 +85,7 @@ p_cnstSup(i) = log(v_sup.l(i)) - p_supElas(i) * log(v_p.l(i) + p_subs(i));
 p_cnstDem(i) = log(v_dem.l(i)) - p_demElas(i) * log(v_p.l(i));
 
 
-* --- check if model calibrates by solving with the parameters calculated above
+* ----- check if model calibrates by solving with the parameters calculated above -----
 
 *     Uncomment one of the following lines to provoke an error in the calibration test
 *p_subs("pigs") = 1;
@@ -116,7 +116,7 @@ p_res(i,"p_dem","bas") = v_p.l(i);
 
 
 
-* --- Check that the model responds correctly to a subsidy on production - an increased supply of the relevant good is expected
+* ----- Check that the model responds correctly to a subsidy on production - an increased supply of the relevant good is expected -----
 *     Uncomment the following line to provoke an error in the subsidy response test      
 p_supElas("pigs") = -0.05;
 *p_demElas("poultry") = 1;
