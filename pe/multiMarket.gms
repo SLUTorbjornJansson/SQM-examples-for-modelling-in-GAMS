@@ -100,15 +100,15 @@ p_cnstDem(i) = log(v_dem.l(i)) - p_demElas(i) * log(v_p.l(i));
 solve m_singleMarket using CNS;
 
 *     Check that equilibrium supply matches base supply within tolerance
-p_problem1D(i) $ [abs(v_sup.l(i) - p_qBase(i))] = v_sup.l(i) - p_qBase(i);
+p_problem1D(i) $ [abs(v_sup.l(i) - p_qBase(i)) gt p_problemTol] = v_sup.l(i) - p_qBase(i);
 $batinclude ../shared/assert_no_problem.gms p_problem1D "Calibration error: Equilibrium supply quantities do not match base quantities within tolerance"
 
 *     Check that equilibrium demand matches base demand within tolerance
-p_problem1D(i) $ [abs(v_dem.l(i) - p_qBase(i))] = v_dem.l(i) - p_qBase(i);
+p_problem1D(i) $ [abs(v_dem.l(i) - p_qBase(i)) gt p_problemTol] = v_dem.l(i) - p_qBase(i);
 $batinclude ../shared/assert_no_problem.gms p_problem1D "Calibration error: Equilibrium demand quantities do not match base quantities within tolerance"
 
 *     Check that equilibrium prices match base prices within tolerance
-p_problem1D(i) $ [abs(v_p.l(i) - p_pBase(i))] = v_p.l(i) - p_pBase(i);
+p_problem1D(i) $ [abs(v_p.l(i) - p_pBase(i)) gt p_problemTol] = v_p.l(i) - p_pBase(i);
 $batinclude ../shared/assert_no_problem.gms p_problem1D "Calibration error: Equilibrium prices do not match base prices within tolerance"
 
 
@@ -124,7 +124,7 @@ p_res(i,"p_dem","bas") = v_p.l(i);
 
 * ----- Check that the model responds correctly to a subsidy on production - an increased supply of the relevant good is expected -----
 *     Uncomment the following line to provoke an error in the subsidy response test      
-p_supElas("pigs") = -0.05;
+*p_supElas("pigs") = -0.05;
 *p_demElas("poultry") = 1;
 
 loop(j, 
