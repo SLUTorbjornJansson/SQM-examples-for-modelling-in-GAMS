@@ -82,7 +82,7 @@ $offlisting
   alias(s,s1,a);
 
   set fdn(aa) / set.set_i /;
-
+  alias(fdn,fdn1);
 
   set c(rows) "Commodities" / set.set_c /;
   alias(c,c1);
@@ -203,6 +203,7 @@ $offlisting
      p_xf(r,f)         "Total factor availabity"
      p_res(r,*,*,*,*)  "Result array"
   ;
+  option p_res:2:3:1;
 
   $$if not errorfree $abort Compilation errors related to parameter declaration, in file: %system.fn% , before line: %system.incline%
 
@@ -343,7 +344,7 @@ $offlisting
 *
   e_regy(r) ..
 
-    v_regy(r) =E= sum(tax, v_yTax(r,tax)) + sum( (f,a), v_xf(r,f,a) * v_pfa(r,f,a)*(1-p_fTax(r,f)));
+    v_regy(r) =E= sum(tax, v_yTax(r,tax)) + sum( f, p_xf(r,f) * v_pf(r,f)*(1-p_fTax(r,f)));
 *
 * --- taxes on output
 *
@@ -355,7 +356,7 @@ $offlisting
 *
   e_ytaxF(R,"f") ..
 
-    v_yTax(R,"f")  =E= SUM( (f,a),    v_xf(r,f,a) * v_pfa(r,f,a) * p_fTax(r,f));
+    v_yTax(R,"f")  =E= SUM( f,    p_xf(r,f) * v_pf(r,f) * p_fTax(r,f));
 *
 * --- household consumption expenditure, value share on total regional income
 *
@@ -561,23 +562,7 @@ $offlisting
 * --- independent check if balancing model worked
 *
   parameter p_samCheck(r,*,*);
-*
-* --- define sum over columns/rows and define difference
-*
-  p_samCheck(r,"expend",bCols)   = sum(bRows,v_SAM.l(r,bRows,bCols));
-  p_samCheck(R,bRows,"revenue")  = sum(bCols,v_SAM.l(R,BRows,BCols));
-  p_samCheck(R,"diff",BCols)     = p_samCheck(r,"expend",bCols) - sum(sameas(bCols,bRows),p_samCheck(r,bRows,"revenue"));
-
-* --- remove differences < 1.E-6 (solver feasibility)
-  p_samCheck(R,"diff",BCols)   $ (abs(p_samCheck(R,"diff",BCols)) le 1.E-6) = 0;
-*
-* --- delete sums without errors
-*
-  p_samCheck(r,"expend",BCols)  $ (not p_samCheck(R,"diff",BCols)) = 0;
-  p_samCheck(r,bRows,"revenue") $ (not sum(sameas(bRows,bCols), p_samCheck(R,"diff",BCols))) = 0;
-
-  abort $ card(p_samCheck) " Check for balanced SAM failed, in file: %system.fn%, line: %system.incline%",emptyCols,p_SAM;
-  $$if not errorfree $abort Compilation errors in SAM balancing, in file: %system.fn% , before line: %system.incline%
+  $$batinclude 'samCheck.gms' 'SAM balancing'
 
 *---------------------------------------------------------------------------------------------------
 *
@@ -749,8 +734,8 @@ $offlisting
 *
 * --- Output tax and factor tax revenues
 *
-  v_yTax.l(r,"s")  = sum(s_to_c(s,c), v_x.l(r,s)    * v_px.l(r,c) * p_oTax(r,c));
-  v_yTax.l(r,"f")  = sum( (f,s),      v_xf.l(r,f,s) * v_pf.l(r,f) * p_fTax(r,f));
+  v_yTax.l(r,"s")  = sum(s_to_c(s,c), v_x.l(r,s) * v_px.l(r,c) * p_oTax(r,c));
+  v_yTax.l(r,"f")  = sum(f,           p_xf(r,f)  * v_pf.l(r,f) * p_fTax(r,f));
 *
 * --- regional income: total tax income plus factor income net of taxes
 *
@@ -783,8 +768,8 @@ $offlisting
   v_xf.fx(r,f,s) = v_xf.l(r,f,s);
   v_x.fx(r,s)    = v_x.l(r,s);
 
-  v_pfa.fx(r,f,a) = v_pfa.l(r,f,a);
-  v_px.fx(r,c)    = v_px.l(r,c);
+  v_pf.fx(r,f)   = v_pf.l(r,f);
+  v_px.fx(r,c)   = v_px.l(r,c);
 
 
   model m_inc /
@@ -864,7 +849,7 @@ $offlisting
 
   v_yc.fx(r)         = V_yc.l(r);
 
-  SOLVE m_calLES MINIMIZING v_dummy USING NLP;
+  solve m_calLES minimizing v_dummy using nlp;
   abort $ m_calLes.sumInfes " Benchmarking of LES demand system failed, in file: %system.fn%, line: %system.incline%",emptyCols,p_SAM;
 
 * --- fix parameters to calibrated solution and de-fix demand
@@ -950,6 +935,7 @@ $offlisting
 *
 *---------------------------------------------------------------------------------------------------
 
+   set checkScens / Bench,HomogT,Test /;
 *
 * --- Benchmark test: Are all model equations feasible at start point? (set solver iterations to zero)
 *
@@ -1014,7 +1000,6 @@ $offlisting
   $$batinclude "store_res.gms" "'More lab'"
   p_xf(R,"lab") = p_xf(r,"lab") / 1.10;
 
-
 * --- (c) %1 t.p. in all sector
 
   p_axp(r,s) = 1.01;
@@ -1039,7 +1024,6 @@ $offlisting
   abort $ m_cge.sumInfes " Simulation with removed factor taxes not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   $$batinclude "store_res.gms" "'no_fTax'"
 
-  option p_res:2:3:1;
   display p_res;
 
   $$if not errorfree $abort Compilation errors in simulation runs, in file: %system.fn% , before line: %system.incline%
