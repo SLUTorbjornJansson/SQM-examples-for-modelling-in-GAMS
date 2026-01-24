@@ -32,24 +32,27 @@ $offtext
 *
 * --- assign variables to result array
 *
-  p_res(%1,herds,%2)        = v_herd.l(herds,%2);
-  p_res(%1,feeds,%2)        = sum(herds,v_feeding.l(herds,feeds,%2));
-  p_res(%1,"sellCows",%2)   = v_sellCows.l(%2);
-  p_res(%1,"buyCows",%2)    = v_buyCows.l(%2);
+  p_res(%1,herds,%2)         = v_herd.l(herds,%2);
+  p_res(%1,feeds,%2)         = sum(herds,v_feeding.l(herds,feeds,%2));
+  p_res(%1,"sellCows",%2)    = v_sellCows.l(%2);
+  p_res(%1,"buyCows",%2)     = v_buyCows.l(%2);
 *
 * --- add eps to total farm results to indicate solutions where the farm was not realized
 *
-  p_res(%1,"gm",%2)         = v_gm.l(%2)  + eps;
-  p_res(%1,"ghg",%2)        = v_ghg.l(%2) + eps;
-  p_res(%1,"obje",%2)       = v_obje.l    + eps;
+  p_res(%1,"gm",%2)          = v_gm.l(%2)  + eps;
+  p_res(%1,"ghg",%2)         = v_ghg.l(%2) + eps;
+  p_res(%1,"obje",%2)        = v_obje.l    + eps;
 *
 * --- calculate averages over time
 *     (Note: this will give the right results in case of rec-dyn for the call of the
-*            last time point)
+*            last years)
 *
-  p_res(%1,"ghg","avg")     = sum(%3,p_res(%1,"ghg",%3))/card(%3);
-  p_res(%1,"gm","avg")      = sum(%3,p_res(%1,"gm",%3))/card(%3);
-  p_res(%1,herds,"avg")     = sum(%3,p_res(%1,herds,%3))/card(%3);
+  p_res(%1,"ghg","avg")      = sum(%3,p_res(%1,"ghg",%3))/card(%3);
+  p_res(%1,"gm","avg")       = sum(%3,p_res(%1,"gm",%3))/card(%3);
+  p_res(%1,herds,"avg")      = sum(%3,p_res(%1,herds,%3))/card(%3);
+  p_res(%1,feeds,"avg")      = sum(%3,p_res(%1,feeds,%3))/card(%3);
+  p_res(%1,"sellCows","avg") = sum(%3,p_res(%1,"sellCows",%3))/card(%3);
+  p_res(%1,"buyCows","avg")  = sum(%3,p_res(%1,"buyCows",%3))/card(%3);
 
   if ( execerror, abort "Run-Time error in file: %system.fn%, line: %system.incline%");
   $$if not errorfree $abort Compilation error after file: %system.fn%
