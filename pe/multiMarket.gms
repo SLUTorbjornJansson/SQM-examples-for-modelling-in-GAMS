@@ -120,7 +120,7 @@ $offtext
 * p_pBase("poultry") = 200;
 
   m_MultiMarket.iterlim = 0;
-  solve m_MultiMarket using CNS;
+  solve m_MultiMarket using cns;
   abort $ (m_MultiMarket.numInfes > 0) "Benchmark test resulted in infeasibilities, in file: %system.fn%, line: %system.incline%";
   m_MultiMarket.iterlim = 10000;
 
@@ -159,14 +159,14 @@ $offtext
   loop(j,
 *    --- Set a subsidy on commodity j and solve model
      p_subs(j) = 20;
-     solve m_MultiMarket using CNS;
+     solve m_MultiMarket using cns;
      abort $ (m_MultiMarket.numInfes > 0) "Test solves with subsidy resulted in infeasibilities, in file: %system.fn%, line: %system.incline%";
 
 *    --- Check that supply of commodity j has increased compared to baseline
-      p_problem1D(j) = min(0, v_sup.l(j) - p_res(j,"supply","bas"));
-      $$batinclude ../shared/assert_no_problem.gms p_problem1D "Error: Supply did not increase after introduction of subsidy"
+     p_problem1D(j) = min(0, v_sup.l(j) - p_res(j,"supply","bas"));
+     $$batinclude ../shared/assert_no_problem.gms p_problem1D "Error: Supply did not increase after introduction of subsidy"
 
-      $$batinclude 'store_res.gms' j
+     $$batinclude 'store_res.gms' j
 
 *    --- Reset subsidy for commodity j
      p_subs(j) = 0;
@@ -181,7 +181,7 @@ $offtext
   p_subs("pigs")    = 30;
   p_subs("poultry") = 10;
 
-  solve m_MultiMarket using CNS;
+  solve m_MultiMarket using cns;
   abort $ (m_MultiMarket.numInfes > 0) "Simualtio  resulted in infeasibilities, in file: %system.fn%, line: %system.incline%";
 
   $$batinclude 'store_res.gms' "'subs'"
