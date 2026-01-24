@@ -19,17 +19,20 @@ $offtext
 *
 *  --- non-negativity checks
 *
-   abort $ sum((r,c,aa), v_xa.l(r,c,aa) lt 0)
-     "Negative Armington demands found in simulation %1, in file: %system.fn%, line: %system.incline%",v_xa.l;
+   p_problem3D(r,c,aa) $ (v_xa.l(r,c,aa) lt 0) = v_xa.l(r,c,aa);
+   $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Negative Armington demands found, in file: %system.fn%, line: %system.incline%"
 
-   abort $ sum((r,f,s), v_xf.l(r,f,s) lt 0)
-     "Negative factor demands found in simulation %1, in file: %system.fn%, line: %system.incline%",v_xf.l;
+   p_problem3D(r,f,a) $ (v_xf.l(r,f,a) lt 0) = v_xf.l(r,f,a);
+   $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Negative factor demands found, in file: %system.fn%, line: %system.incline%"
 
-   abort $ sum((r,f), v_pf.l(r,f) lt 0)
-     "Negative factor prices found in simulation %1, in file: %system.fn%, line: %system.incline%",v_pf.l;
+   p_problem3D(r,f,a) $ (v_pfa.l(r,f,a) lt 0) = v_pfa.l(r,f,a);
+   $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Negative factor prices found, in file: %system.fn%, line: %system.incline%"
 
-   abort $ sum((r,c), v_px.l(r,c) lt 0)
-     "Negative product price found in simulation %1, in file: %system.fn%, line: %system.incline%",v_px.l;
+   p_problem2D(r,f)   $ (v_pf.l(r,f) lt 0) = v_pf.l(r,f);
+   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative factor prices found, in file: %system.fn%, line: %system.incline%"
+
+   p_problem2D(r,c)   $ (v_px.l(r,c) lt 0) = v_px.l(r,c);
+   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative product prices found, in file: %system.fn%, line: %system.incline%"
 *
 *  --- regional income
 *
@@ -105,8 +108,8 @@ $offtext
 *
 *  --- check that EV is zero for benchmark and homogeniety tests
 *
-   abort $ (sum(r,abs(p_res(r,"tot","ev","v",%1)) gt 1.E-8) and sum(sameas(%1,checkScens),1))
-     "Error in calculation of EV, should be zero for %1,  in file: %system.fn%, line: %system.incline%",p_res;
+   p_problem1D(r)   $ ((abs(p_res(r,"tot","ev","v",%1)) gt 1.E-8) and sum(sameas(%1,checkScens),1)) = p_res(r,"tot","ev","v",%1);
+   $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Error in calculation of EV, should be zero for %1, in file: %system.fn%, line: %system.incline%"
 *
 *  --- store factor supply, related price and income
 *
@@ -132,8 +135,9 @@ $offtext
 *
 *  --- check that institutions spend all their money on product demands
 *
-   abort $ sum((r,fdn), abs(p_res(r,fdn,"e","v",%1) - sum(c,p_res(r,c,fdn,"p",%1)*p_res(r,c,fdn,"q",%1))) gt 1.E-6)
-     "Balance of earning and spending for institutions (set fdn) violated %1,  in file: %system.fn%, line: %system.incline%",p_res,fdn;
+   p_problem2D(r,fdn)   $ (abs(p_res(r,fdn,"e","v",%1) - sum(c,p_res(r,c,fdn,"p",%1)*p_res(r,c,fdn,"q",%1))) gt 1.E-6)
+        = p_res(r,fdn,"e","v",%1) - sum(c,p_res(r,c,fdn,"p",%1)*p_res(r,c,fdn,"q",%1));
+   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Balance of earning and spending for institutions violated for %1, in file: %system.fn%, line: %system.incline%"
 *
 *  --- store tax base for output taxes
 *

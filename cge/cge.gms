@@ -19,6 +19,9 @@ $offtext
 ********************************************************************************
 $offlisting
 
+* --- Initialize error catching mechanism
+  $$batinclude "../shared/assert_no_problem.gms" init
+
 *---------------------------------------------------------------------------------------------------
 *
 *     (I) Set definitions
@@ -160,12 +163,14 @@ $offlisting
 *
 * --- check for completly empty SAM accounts (should not occur in the didactic example and typically also not in a single country SAM)
 *
-  set emptyRows(r,rows);
-  emptyRows(r,rows) $ (not sum(cols,p_sam(r,rows,cols))) = YES;
-  abort $ card(emptyRows) " Empty rows    in SAM for at least one region, in file: %system.fn%, line: %system.incline%",emptyRows,p_SAM;
-  set emptyCols(r,cols);
-  emptyCols(r,cols) $ (not sum(rows,p_sam(r,rows,cols))) = YES;
-  abort $ card(emptyCols) " Empty columns in SAM for at least one region, in file: %system.fn%, line: %system.incline%",emptyCols,p_SAM;
+* ----- uncomment the following line to trigger an error
+* p_sam(r,"lab",cols) = 0;
+
+  p_problem2D(r,rows) $ (not sum(cols,p_sam(r,rows,cols))) = YES;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Empty rows in SAM for at least one region, in file: %system.fn%, line: %system.incline%"
+
+  p_problem2D(r,cols) $ (not sum(rows,p_sam(r,rows,cols))) = YES;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Empty columns in SAM for at least one region, in file: %system.fn%, line: %system.incline%"
 
   display p_SAM;
 
@@ -546,9 +551,8 @@ $offlisting
   IF ( m_balSam.numInfes > 0,
      Abort "SAM could not be balanced, Stop, in file: %system.fn% , before line: %system.incline%";
   );
-
-  abort $ sum((r,rows,cols),v_sam.l(r,rows,cols) lt 0)
-    " Negative SAM entries after balancing step, in file: %system.fn%, line: %system.incline%",v_sam.l;
+  p_problem3D(r,rows,cols) $ (p_sam(r,rows,cols) lt 0) = p_sam(r,rows,cols);
+  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Negative SAM entries after balancing step, in file: %system.fn%, line: %system.incline%"
 
   if ( execerror, abort "Run-Time error related to SAM balancing, in file: %system.fn%, line: %system.incline%");
   $$if not errorfree $abort Compilation errors in SAM balancing, in file: %system.fn% , before line: %system.incline%
@@ -575,8 +579,8 @@ $offlisting
 *
 * --- check for negative transformation elasticities
 *
-  abort $ sum((r,f),(p_omegaf(r,f) lt 0))
-   " Check for non-negative transformation elasticities failed, in file: %system.fn%, line: %system.incline%",p_omegaf;
+  p_problem2D(r,f) $ (p_omegaf(r,f) lt 0) = p_omegaf(r,f);
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative transformation elasticities found, in file: %system.fn%, line: %system.incline%"
 *
 * --- factor prices are unity
 *
@@ -611,8 +615,8 @@ $offlisting
 *
   v_xf.fx(r,f,s) = v_xf.l(r,f,s);
 *
-  solve m_fac using MCP;
-  abort $ m_fac.sumInfes " Benchmarking of factor supply failed, in file: %system.fn%, line: %system.incline%",emptyCols,p_SAM;
+  solve m_fac using MCP
+  abort $ m_fac.sumInfes " Benchmarking of factor supply failed, in file: %system.fn%, line: %system.incline%";
 
   if ( execerror, abort "Run-Time error related to benchmarking of factor supply, in file: %system.fn%, line: %system.incline%");
   $$if not errorfree $abort Compilation errors benchmarking of factor supply, in file: %system.fn% , before line: %system.incline%
@@ -631,15 +635,16 @@ $offlisting
 *     (4) Substitution between factors inside value added nest
 *
   p_sigmap(r,s) = 0;
-  p_sigman(r,s) = 0;
-  p_sigmav(r,s) = 0.5;
+  p_problem2D(r,s) $ (p_sigmap(r,s) lt 0) = p_sigmap(r,s);
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative substitution elasticities between VA and ND found, in file: %system.fn%, line: %system.incline%"
 
-  abort $ sum((r,s),(p_sigmap(r,s) lt 0))
-   " Check for non-negative substitution elasticities between VA and ND failed, in file: %system.fn%, line: %system.incline%",p_sigmap
-  abort $ sum((r,s),(p_sigman(r,s) lt 0))
-   " Check for non-negative substitution elasticities between intermediates failed, in file: %system.fn%, line: %system.incline%",p_sigman;
-  abort $ sum((r,s),(p_sigmav(r,s) le 0))
-   " Check for positive substitution elasticities in value-added nest failed, in file: %system.fn%, line: %system.incline%",p_sigmav;
+  p_sigman(r,s) = 0;
+  p_problem2D(r,s) $ (p_sigman(r,s) lt 0) = p_sigman(r,s);
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative substitution elasticities between intermediates found, in file: %system.fn%, line: %system.incline%"
+
+  p_sigmav(r,s) = 0.5;
+  p_problem2D(r,s) $ (p_sigmav(r,s) le 0) = p_sigmav(r,s)+eps;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Non-positive substitution elasticities in value-added nest, in file: %system.fn%, line: %system.incline%"
 *
 * --- prices are unity in benchmark
 *     (= SAM values are interpreted as quantity indices)
@@ -671,8 +676,8 @@ $offlisting
 *
 * --- check for unreasonable large negative output tax rates
 *
-  abort $ sum((r,c), (p_oTax(r,c) lt -0.9))
-   " Unreasonably high negative output tax rate found, in file: %system.fn%, line: %system.incline%",p_oTax;
+  p_problem2D(r,c) $ (p_oTax(r,c) lt -0.9) = p_oTax(r,c);
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Unreasonably high negative output tax rate found, in file: %system.fn%, line: %system.incline%"
 *
 * --- store output tax rate at benchmark
 *
@@ -689,24 +694,24 @@ $offlisting
 * --- define share parameters in value added and intermediate demand composites
 *
   p_ava(r,s)     = [v_va.l(r,s)/v_x.l(r,s)] / (sum(s_to_c(s,c),v_px.l(r,c)) / v_pva.l(r,s)) ** p_sigmap(r,s) ;
-  abort $ sum((r,s), (p_ava(r,s) lt 0))
-   " Negative cost share parameters for value added nest found, in file: %system.fn%, line: %system.incline%",p_ava;
+  p_problem2D(r,s) $ (p_ava(r,s) lt 0) = p_ava(r,s);
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative cost share parameters for value added nest, in file: %system.fn%, line: %system.incline%"
 
   p_and(r,s)     = [v_nd.l(r,s)/v_x.l(r,s)] / (sum(s_to_c(s,c),v_px.l(r,c)) / v_pnd.l(r,s)) ** p_sigmap(r,s) ;
-  abort $ sum((r,s), (p_and(r,s) lt 0))
-   " Negative cost share parameters for ND nest found, in file: %system.fn%, line: %system.incline%",p_ava;
+  p_problem2D(r,s) $ (p_and(r,s) lt 0) = p_and(r,s);
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative cost share parameters for ND nest, in file: %system.fn%, line: %system.incline%"
 *
 * --- define IO-Coefficients as share of intermediate demands on intermediate composite
 *
   p_io(r,c,s)    = v_xa.l(r,c,s)/v_nd.l(r,s);
-  abort $ sum((r,c,s), (p_io(r,c,s) lt 0))
-   " Negative IO parameters found, in file: %system.fn%, line: %system.incline%",p_io;
+  p_problem3D(r,c,s) $ (p_io(r,c,s) lt 0) = p_io(r,c,s);
+  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Negative IO parameters, in file: %system.fn%, line: %system.incline%"
 *
 * --- define share parameters for factors in value added composite
 *
   p_af(r,f,s)    = v_xf.l(r,f,s)/v_va.l(r,s);
-  abort $ sum((r,c,s), (p_io(r,c,s) lt 0))
-   " Negative factor cost share parameters found, in file: %system.fn%, line: %system.incline%",p_af;
+  p_problem3D(r,f,s) $ (p_af(r,f,s) lt 0) = p_af(r,f,s);
+  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Negative cost share parameters, in file: %system.fn%, line: %system.incline%"
 *
 * --- No shift of production frontier at benchmark
 *
@@ -728,7 +733,7 @@ $offlisting
 *
   m_sup.iterlim=0;
   solve m_sup using MCP;
-  abort $ m_sup.sumInfes " Benchmarking of production functions failed, in file: %system.fn%, line: %system.incline%",emptyCols,p_SAM;
+  abort $ m_sup.sumInfes " Benchmarking of production functions failed, in file: %system.fn%, line: %system.incline%";
 
   if ( execerror, abort "Run-Time error related to benchmarking of production functions, in file: %system.fn%, line: %system.incline%");
   $$if not errorfree $abort Compilation errors in benchmarking of production functions, in file: %system.fn% , before line: %system.incline%
@@ -756,16 +761,16 @@ $offlisting
 * --- income distribution (investments, public and private demand expenditures)
 *
   v_yc.l(r) = v_sam.l(r,"expend","hou") - v_sam.l(r,"inv","hou");
-  abort $ sum(r, (v_yc.l(r) le 0))
-   " Zero or negative expenditures for private demand found, in file: %system.fn%, line: %system.incline%",v_yc.l;
+  p_problem1D(r) $ (v_yc.l(r) le 0) = v_yc.l(r)+eps;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Zero or negative expenditures for private demand found, in file: %system.fn%, line: %system.incline%"
 
   v_yg.l(r) = v_sam.l(r,"expend","gov") - v_sam.l(r,"inv","gov");
-  abort $ sum(r, (v_yg.l(r) le 0))
-   " Zero or negative expenditures for private demand found, in file: %system.fn%, line: %system.incline%",v_yg.l;
+  p_problem1D(r) $ (v_yg.l(r) le 0) = v_yg.l(r)+eps;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Zero or negative expenditures for public demand found, in file: %system.fn%, line: %system.incline%"
 
   v_ys.l(r) = v_sam.l(r,"expend","inv");
-  abort $ sum(r, (v_ys.l(r) le 0))
-   " Zero or negative investments expenditures found, in file: %system.fn%, line: %system.incline%",v_ys.l;
+  p_problem1D(r) $ (v_ys.l(r) le 0) = v_ys.l(r)+eps;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Zero or negative expenditures for investments found, in file: %system.fn%, line: %system.incline%"
 *
 * --- share parameters of CD-function for distribution of regional income
 *
@@ -773,10 +778,10 @@ $offlisting
   p_phi(r,"gov") = v_yg.l(r) / v_regy.l(r);
   p_phi(r,"inv") = v_ys.l(r) / v_regy.l(r);
 *
-* --- check that share parameters add up to unity
+* --- check that share parameters p_hi add up to unity
 *
-  parameter p_testPhi; p_testPhi(r) = sum(dem, p_phi(r,dem));
-  abort $ sum(r $ (p_testPhi(r) ne 1),1) "Inconsistent income distribution shares, in file: %system.fn%, line: %system.incline%", p_testPhi;
+  p_problem1D(r) $ (sum(dem, p_phi(r,dem)) ne 1) = sum(dem, p_phi(r,dem))+eps;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Inconsistent income distribution shares, in file: %system.fn%, line: %system.incline%"
 *
 * --- factor use and output is fixed in the following sub-model
 *
@@ -799,7 +804,7 @@ $offlisting
   m_inc.iterlim   = 0;
   m_inc.holdfixed = 1;
   solve m_inc using MCP;
-  abort $ m_sup.sumInfes " Benchmarking of income distribution failed, in file: %system.fn%, line: %system.incline%",emptyCols,p_SAM;
+  abort $ m_sup.sumInfes " Benchmarking of income distribution failed, in file: %system.fn%, line: %system.incline%";
 
   if ( execerror, abort "Run-Time error related to benchmarking of income distribution, in file: %system.fn%, line: %system.incline%");
   $$if not errorfree $abort Compilation errors in benchmarking of income distribution, in file: %system.fn% , before line: %system.incline%
@@ -815,21 +820,21 @@ $offlisting
 *
   v_xa.l(r,c,"gov")   = v_sam.l(r,c,"gov");
   p_alphaa(r,c,"gov") = v_xa.l(r,c,"gov") / v_yg.l(r);
-  abort $ sum((r,c),(p_alphaa(r,c,"gov") lt 0))
-   " Negative budget shares for public demand found, in file: %system.fn%, line: %system.incline%",p_alphaa;
+  p_problem2D(r,c) $ (p_alphaa(r,c,"gov") lt 0) = p_alphaa(r,c,"gov")+eps;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative budget shares for public demand, in file: %system.fn%, line: %system.incline%"
 
-  abort $ sum(r, sum(c,p_alphaa(r,c,"gov")) ne 1)
-   " Budget shares for public demand don't add up to unity, in file: %system.fn%, line: %system.incline%",p_alphaa;
+  p_problem1D(r)   $ (sum(c,p_alphaa(r,c,"gov")) ne 1) = sum(c,p_alphaa(r,c,"gov"));
+  $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Budget shares for public demand don't add up to unity, in file: %system.fn%, line: %system.incline%"
 *
 * --- assign investment demand and calculate value shares (CD)
 *
   v_xa.l(r,c,"inv")   = v_sam.l(r,c,"inv");
   p_alphaa(r,c,"inv") = v_xa.l(r,c,"inv") / v_ys.l(r);
-  abort $ sum((r,c),(p_alphaa(r,c,"inv") lt 0))
-   " Negative budget shares for investment demand found, in file: %system.fn%, line: %system.incline%",p_alphaa;
+  p_problem2D(r,c) $ (p_alphaa(r,c,"inv") lt 0) = p_alphaa(r,c,"inv")+eps;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative budget shares for investment demand, in file: %system.fn%, line: %system.incline%"
 
-  abort $ sum(r, sum(c,p_alphaa(r,c,"inv")) ne 1)
-   " Budget shares for investment demand don't add up to unity, in file: %system.fn%, line: %system.incline%",p_alphaa;
+  p_problem1D(r)   $ (sum(c,p_alphaa(r,c,"inv")) ne 1) = sum(c,p_alphaa(r,c,"inv"));
+  $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Budget shares for investment demand don't add up to unity, in file: %system.fn%, line: %system.incline%"
 
 * ---- set marginal expenditure shares for LES demand system
 
@@ -837,11 +842,11 @@ $offlisting
   p_alphaa(R,"C_Ind","hou") = 0.4;
   p_alphaa(R,"C_Ser","hou") = 0.5;
 
-  abort $ sum((r,c),(p_alphaa(r,c,"hou") lt 0))
-   " Negative budget shares for private demand found, in file: %system.fn%, line: %system.incline%",p_alphaa;
+  p_problem2D(r,c) $ (p_alphaa(r,c,"hou") lt 0) = p_alphaa(r,c,"hou")+eps;
+  $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative marginal budget shares for private demand, in file: %system.fn%, line: %system.incline%"
 
-  abort $ sum(r, sum(c,p_alphaa(r,c,"hou")) ne 1)
-   " Budget shares for private demand don't add up to unity, in file: %system.fn%, line: %system.incline%",p_alphaa;
+  p_problem1D(r)   $ (sum(c,p_alphaa(r,c,"hou")) ne 1) = sum(c,p_alphaa(r,c,"hou"));
+  $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Budget shares for private demand don't add up to unity, in file: %system.fn%, line: %system.incline%"
 *
 * --- the commitment terms are used to calibrate the demand system
 *
@@ -849,7 +854,6 @@ $offlisting
   v_gamma.UP(R,c)     = v_sam.l(R,c,"Hou") * 0.9;
   v_gamma.UP(R,c)     = inf;
   v_gamma.l(R,c)      = 0;
-
 *
 * ---- Calibration model for CES share and shift parameters,
 *      minimum commitment levels Gamma for LES demand system
@@ -869,7 +873,7 @@ $offlisting
   v_xa.fx(r,c,"hou") = V_sam.l(r,c,"hou");
 
   solve m_calLES minimizing v_dummy using nlp;
-  abort $ m_calLes.sumInfes " Benchmarking of LES demand system failed, in file: %system.fn%, line: %system.incline%",emptyCols,p_SAM;
+  abort $ m_calLes.sumInfes " Benchmarking of LES demand system failed, in file: %system.fn%, line: %system.incline%";
 
 * --- fix parameters to calibrated solution and unfix finak demand
 
@@ -891,7 +895,7 @@ $offlisting
   m_dem.iterlim   = 0;
   m_dem.holdfixed = 1;
   solve m_dem using MCP;
-  abort $ m_dem.sumInfes " Benchmarking of final demand systems failed, in file: %system.fn%, line: %system.incline%",emptyCols,p_SAM;
+  abort $ m_dem.sumInfes " Benchmarking of final demand systems failed, in file: %system.fn%, line: %system.incline%";
 
   if ( execerror, abort "Run-Time error related to benchmarking of demand systems, in file: %system.fn%, line: %system.incline%");
   $$if not errorfree $abort Compilation errors in benchmarking of demand systems, in file: %system.fn% , before line: %system.incline%
@@ -977,11 +981,13 @@ $offlisting
 
   $$batinclude "store_res.gms" "'HomogT'"
 
-  abort $ sum((r,c,aa),abs(p_res(r,c,aa,"q","Bench") - p_res(r,c,aa,"q","HomogT")) gt 1.E-8)
-   " Homogeniety test failed for product demands, check r-c-aa-q in p_res,  in file: %system.fn%, line: %system.incline%",p_res;
+  p_problem3D(r,c,aa) $ (abs(p_res(r,c,aa,"q","Bench") - p_res(r,c,aa,"q","HomogT")) gt 1.E-8)
+   = p_res(r,c,aa,"q","Bench") - p_res(r,c,aa,"q","HomogT");
+  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Homogeniety test failed for product demands, in file: %system.fn%, line: %system.incline%"
 
-  abort $ sum((r,f,a),abs(p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","HomogT")) gt 1.E-8)
-   " Homogeniety test failed for factor demands, check r-f-a in p_res, in file: %system.fn%, line: %system.incline%",p_res;
+  p_problem3D(r,f,a) $ (abs(p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","HomogT")) gt 1.E-8)
+   = p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","HomogT");
+  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Homogeniety test failed for product demands, in file: %system.fn%, line: %system.incline%"
 *
 * --- Simulation check: reset numeraire to unity, run simulation, and check that product and factor demands are unchanged
 *
@@ -993,11 +999,13 @@ $offlisting
 
   $$batinclude "store_res.gms" "'Test'"
 
-  abort $ sum((r,c,aa),abs(p_res(r,c,aa,"q","Bench") - p_res(r,c,aa,"q","Test")) gt 1.E-8)
-   " Simulation test at unchanged prices failed for product demands, check r-c-aa-q in p_res,  in file: %system.fn%, line: %system.incline%",p_res;
+  p_problem3D(r,c,aa) $ (abs(p_res(r,c,aa,"q","Bench") - p_res(r,c,aa,"q","Test")) gt 1.E-8)
+   = p_res(r,c,aa,"q","Bench") - p_res(r,c,aa,"q","Test");
+  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Homogeniety test failed for product demands, in file: %system.fn%, line: %system.incline%"
 
-  abort $ sum((r,f,a),abs(p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","Test")) gt 1.E-8)
-   " Simulation test at unchanged prices failed for factor demands, check r-f-a in p_res, in file: %system.fn%, line: %system.incline%",p_res;
+  p_problem3D(r,f,a) $ (abs(p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","Test")) gt 1.E-8)
+   = p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","Test");
+  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Homogeniety test failed for product demands, in file: %system.fn%, line: %system.incline%"
 
   $$if not errorfree $abort Compilation errors in test runs, in file: %system.fn% , before line: %system.incline%
 
