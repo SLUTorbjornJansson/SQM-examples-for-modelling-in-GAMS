@@ -35,7 +35,6 @@ $offtext
 
    scalar lag / 1 /;
 
-
    set herds / cow     "Adult cow"
                mCalv   "Male calf, up to 1 year"
                fCalv   "Female calf, up to 1 year"
@@ -45,6 +44,11 @@ $offtext
                slgtCow "Slaughtered cow"
              /;
    alias(herds,herds1,herds2);
+
+   set reqs  "Animal requirement" / enne "Net energy lactation, min"
+                                    crpr "Crude protein, min"
+                                    drmx "Dry matter, max"/;
+   set feeds / concCattle,grasSil,grasPast,maizSil /;
 
    $$if not errorfree $abort Compilation errors related to set definitions input, in file: %system.fn% , before line: %system.incline%
    if ( execerror, abort "Run-Time error related to set definitions, in file: %system.fn%, line: %system.incline%");
@@ -73,7 +77,6 @@ $offtext
    $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Transition coefficient of at least one herd don't add to unity, in file: %system.fn%, line: %system.incline%"
 
    parameter p_gm(herds) "Gross margins per year and animal, without feed cost" /
-
       cow       2000
       mCalv     -50
       fCalv     -50
@@ -82,22 +85,21 @@ $offtext
       heifF      800
       slgtCow    200
    /;
+*  Note: Raising animal processes (calves, heifers for raising) have no marketable output and therefore negative gross margins.
 
-   parameter p_priceCows / 2000 /;
+   parameter p_priceCows "Price for buying a young cow ready to enter the herd" / 2000 /;
 
-   set reqs  "Animal requirement" / enne "Net energy lactation"
-                                    crpr "Crude proteen"
-                                    drmx "Dry matter max"/;
-   set feeds / concCattle,grasSil,grasPast,maizSil /;
-
-   table p_cont(feeds,reqs) "Requirement content related to fresh weight per kg"
-
+   table p_cont(feeds,reqs) "Requirement contents related to fresh weight per kg"
                     enne     crpr    drmx
     concCattle      7.61    0.18   -0.90
     grasSil         2.09    0.054  -0.35
     grasPast        1.10    0.038  -0.18
     maizSil         2.26    0.028  -0.35
    ;
+*  Note: The negative values refer to maximal requirements
+
+   p_problem2D(feeds,reqs) $ (p_cont(feeds,reqs) eq 0) = eps;
+   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Missing requirement contents (check for eps), in file: %system.fn%, line: %system.incline%"
 
 
    parameter p_feedPrice(feeds) "Price of feed per ton" /
@@ -107,8 +109,8 @@ $offtext
     maizSil        32
    /;
 
-   p_problem1D(feeds) $ (p_feedPrice(feeds) le 0) = p_feedPrice(feeds);
-   $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Negative feed prices, in file: %system.fn%, line: %system.incline%"
+   p_problem1D(feeds) $ (p_feedPrice(feeds) le 0) = p_feedPrice(feeds) + eps;
+   $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Negative or missing feed prices, in file: %system.fn%, line: %system.incline%"
 
    parameter p_GHGPerFeed(feeds) "GHG emissions Co2eq in ton of each feed per ton" /
     concCattle     10
@@ -116,6 +118,9 @@ $offtext
     grasPast       1.5
     maizSil        3.5
    /;
+
+   p_problem1D(feeds) $ (p_GHGPerFeed(feeds) le 0) = p_GHGPerFeed(feeds) + eps;
+   $$batinclude "../shared/assert_no_problem.gms" p_problem1D "Negative or missing GHG emission coefficient for feeds, in file: %system.fn%, line: %system.incline%"
 
    table p_reqs(herds,reqs) "Yearly requirement per animal"
 
@@ -127,8 +132,12 @@ $offtext
    mCalv    8035.721     196.490   -1103.221
    cow     48003.056     977.055   -7665.000
    ;
+*  Note: The negative values refer to maximal requirements
 
-   parameter p_res;
+   p_problem2D(herds,reqs) $ ((p_reqs(herds,reqs) eq 0) and (not sameas(herds,"slgtCow"))) = eps;
+   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Missing requirements (check for eps), in file: %system.fn%, line: %system.incline%"
+
+   parameter p_res(*,*,*);
 
    $$if not errorfree $abort Compilation errors related to data input, in file: %system.fn% , before line: %system.incline%
    if ( execerror, abort "Run-Time error related to data input, in file: %system.fn%, line: %system.incline%");
@@ -140,7 +149,6 @@ $offtext
 * --------------------------------------------------------------------------------------
 
    equations
-
      e_herd(herds,t)         "Herd dynamics"
      e_reqs(herds,reqs,t)    "Requirement constraints"
      e_GHG                   "Maximum GHG emissions linked to feed use"
@@ -154,7 +162,7 @@ $offtext
      v_buyCows(t)                   "Buy a cow at beginning of year"
      v_sellCows(t)                  "Sell a cow at beginning of year"
      v_feeding(herds,feeds,t)       "Feeding in ton fresh weight"
-     v_ghg(t)
+     v_ghg(t)                       "Yearly GHG emissions linked to feed use"
    ;
 
    variables
@@ -162,7 +170,8 @@ $offtext
      v_obje                         "Farm gross margin, average per year"
    ;
 *
-*  --- herd dynamics
+*  --- herd dynamics (current herd size must fit transition from the same of other herds in the previous year,
+*                     considering buying and selling in case of adult cows)
 *
    e_herd(herds,curt(t)) ..
 
@@ -172,7 +181,7 @@ $offtext
                         + v_buyCows (t) $ sameas(herds,"cow")
                         - v_sellCows(t) $ sameas(herds,"cow");
 *
-*  --- animal requirements
+*  --- animal requirement constraints
 *
   e_reqs(herds,reqs,curt(t)) ..
 
@@ -186,20 +195,22 @@ $offtext
      v_ghg(t)
         =E= sum( (herds,feeds), v_feeding(herds,feeds,t)*p_GHGPerFeed(feeds));
 *
-*  --- gross margins in each year
+*  --- gross margins in each year (from herds, buying feeds and cows, and selling cows)
 *
   e_gm(curt(t)) ..
 
       v_gm(t) =E=    sum( herds,       v_herd(herds,t)*p_gm(herds))
                    - sum( (herds,feeds), v_feeding(herds,feeds,t) * p_feedPrice(feeds))
                    - v_buyCows(t)  * p_priceCows
+*                  --- assume that the price for selling a productive cow (not for slaughter) is 75% of the price
+*                      of buying a new one
                    + v_sellCows(t) * p_priceCows * 0.75;
 *
-*  --- farm gross margin
+*  --- farm gross margin (average over simulation horizon curT)
 *
    e_obje ..
 
-     v_obje * card(curT) =E= sum(curt(t), v_gm(t));
+     v_obje * card(curT) =E= sum(curt, v_gm(curT));
 
    model m_herd / all /;
    m_herd.solvelink=5;
@@ -211,10 +222,12 @@ $offtext
    if ( execerror, abort "Run-Time error related to model definition, in file: %system.fn%, line: %system.incline%");
 *
 *  --- maximal herd size
+*      Note: In this simple model focusing on the herd dynamics and feeding, the upper limit captures the impact of other constraints
+*            in more evolved models, such as stable sizes, grazing areas, labor endowments etc.
 *
    v_herd.up("cow",t)    =  100;
 *
-*  --- Comparative static
+*  --- Comparative static solution: Only one year, not lags in herd dynamics = steady state solution
 *
    option kill=curT;
    curT("t1") = YES;
@@ -225,7 +238,7 @@ $offtext
    $$if not errorfree $abort Compilation errors after comparative-static solve, in file: %system.fn% , before line: %system.incline%
    if ( execerror, abort "Run-Time error related after comparative-static solve, in file: %system.fn%, line: %system.incline%");
 
-   $$batinclude 'store_res_herd.gms' "'comp_stat'" curT
+   $$batinclude 'store_res_herd.gms' "'comp_stat'" curT curT
 *
 *  --- market intelligence tests with comp-stat version: increase gross margin of one herds and check that
 *      (1) profit increases
@@ -246,7 +259,7 @@ $offtext
        p_gm(herds2) = p_gm(herds2) - 50;
    );
 *
-*  --- Fully dynamic
+*  --- Fully dynamic version: Solve simultaneously for the whole time horizon
 *
    lag = 1;
    curt(t) = YES;
@@ -256,38 +269,26 @@ $offtext
    $$if not errorfree $abort Compilation errors after fully dynamic solve, in file: %system.fn% , before line: %system.incline%
    if ( execerror, abort "Run-Time error related after fully dynamic solve, in file: %system.fn%, line: %system.incline%");
 
-   $$batinclude 'store_res_herd.gms' "'full_Dyn'" t
+   $$batinclude 'store_res_herd.gms' "'full_Dyn'" t t
 *
-*  --- Recursive-dynamic over one year (this will not open the farm, too myopic)
+*  --- Recursive-dynamics over one year (this will not open the farm, too myopic)
 *
-   m_herd.solprint = 1;
-   m_herd.limcol = 0;
-   m_herd.limrow = 0;
-
-   option kill=v_herd.l;
-   option kill=v_sellCows.l;
-   option kill=v_buyCows.l;
-   option kill=v_gm.l;
-
    loop(t1,
        option kill=curT;
        curT(t1)   = YES;
        solve m_herd using LP maximizing v_obje;
        abort $ m_herd.sumInfes " Recursive-dynamic base run ended with infeasibilities, in file: %system.fn%, line: %system.incline%";
        v_herd.fx(herds,t1) = v_herd.l(herds,t1);
-       $$batinclude 'store_res_herd.gms' "'rec_Dyn1'" t1
+       $$batinclude 'store_res_herd.gms' "'rec_Dyn1'" t1 t
    );
 *
-*  --- Recursive-Dynamic over two years
+*  --- Recursive-Dynamic over two years (sufficiently long forwarded looking period, should generate same results as fully dynamic run)
+*      Note that we need to remove the lower and upper bounds for herds that were fixed in the loop over t1 above. As the upper bounds
+*      are all infinite after the kill statement, we need the upper limit for the cow herd again.
 *
-   m_herd.solprint = 1;
-   m_herd.limcol = 0;
-   m_herd.limrow = 0;
-
-   option kill=v_herd.l;
-   option kill=v_sellCows.l;
-   option kill=v_buyCows.l;
-   option kill=v_gm.l;
+   option kill=v_herd.lo;
+   option kill=v_herd.up;
+   v_herd.up("cow",t)    =  100;
 
    loop(t1,
        option kill=curT;
@@ -296,8 +297,13 @@ $offtext
        solve m_herd using LP maximizing v_obje;
        abort $ m_herd.sumInfes " Recursive-dynamic base run ended with infeasibilities, in file: %system.fn%, line: %system.incline%";
        v_herd.fx(herds,t1) = v_herd.l(herds,t1);
-       $$batinclude 'store_res_herd.gms' "'rec_Dyn2'" t1
+       $$batinclude 'store_res_herd.gms' "'rec_Dyn2'" t1 t
    );
+*
+*  --- check that fully dynamic and rec-dyn over 2 years give the same herd sizes
+*
+   p_problem2D(herds,t) $ (p_res('rec_dyn2',herds,t) ne p_res('full_dyn',herds,t)) = p_res('rec_dyn2',herds,t) - p_res('full_dyn',herds,t);
+   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Fully dynamic and rec-dyn over 2 year give different herd sizes, in file: %system.fn%, line: %system.incline%"
 
    $$if not errorfree $abort Compilation errors after recursive-dynamic solve, in file: %system.fn% , before line: %system.incline%
    if ( execerror, abort "Run-Time error related after recursive-dynamic solve, in file: %system.fn%, line: %system.incline%");
