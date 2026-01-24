@@ -88,7 +88,6 @@ $offtext
                (1/p_alphaa(r,c,"inv"))**p_alphaa(r,c,"inv") )
      - p_res(r,"inv","e","v","bench");
 
-
    p_res(r,"tot","u","v",%1)
        = prod(dem, (p_res(r,dem,"e","v",%1)/p_res(r,dem,"p","v",%1))**p_phi(r,dem) );
 
@@ -104,7 +103,6 @@ $offtext
    p_res(r,"hou","ev","v",%1) =  p_res(r,"tot","ev","v",%1)
                                -  p_res(r,"gov","ev","v",%1)
                                -  p_res(r,"inv","ev","v",%1);
-
 *
 *  --- check that EV is zero for benchmark and homogeniety tests
 *
@@ -167,6 +165,5 @@ $offtext
 *
 *  --- assign SAM variables from new SAM and check that it is balanced
 *
-   option kill=v_sam.l;
    v_sam.l(r,rows,cols) = p_res(r,rows,cols,"v",%1);
    $$batinclude 'samCheck.gms' %1

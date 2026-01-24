@@ -59,7 +59,6 @@ $offlisting
         Revenue
   /;
 
-
   SET BCols(cols) "Columns to balance";
   BCols(Cols)         = YES;
   BCols("Revenue")    = NO;
@@ -131,7 +130,6 @@ $offlisting
 * r1.Row                                     Imports                                                  Remitt
 *
 * r1.Expend
-
 
   TABLE p_SAM(r,rows,cols) "Social accounting matrix as total values (e.g. mio $), see SAM.xls"
 *
@@ -280,10 +278,8 @@ $offlisting
     e_pfaCET(r,f,a)    "Market balance factor, linear aggregation"
     e_xf(r,f,a)        "CET distribtion of factor supply to sector"
 
-
-      e_dummy             "Dummy objective to use NLP instead CNS model"
+    e_dummy             "Dummy objective to use NLP instead CNS model"
   ;
-
 
   Free variables
 
@@ -495,7 +491,6 @@ $offlisting
   e_pfaLin(r,f,a) $ (p_omegaf(r,f) eq inf) ..
 
      v_pfa(r,f,a) =E= v_pf(r,f);
-
 *
 * ---------------------------------------------------------------------------------------------------------------------
 *
@@ -516,7 +511,7 @@ $offlisting
 *     Stored in the "BAL" column of the result array p_res after the calibration step
 *
 
-  MODEL m_balSam /
+  model m_balSam /
         e_expend
         e_Rev
         e_Bal
@@ -531,8 +526,8 @@ $offlisting
 
 * --- Calculate the total expenditure/revenue
 
-  p_sam(R,"expend",BCols ) = SUM( BRows,  p_sam(R,BRows,BCols));
-  p_sam(R,BRows,"revenue") = SUM( BCols,  p_sam(R,BRows,BCols));
+  p_sam(R,"expend",BCols ) = sum( BRows,  p_sam(R,BRows,BCols));
+  p_sam(R,BRows,"revenue") = sum( BCols,  p_sam(R,BRows,BCols));
 
 * --- Store the unbalanced SAM in the result array
 
@@ -547,10 +542,9 @@ $offlisting
 
 * --- Balance the SAM
 
-  SOLVE m_balSam MINIMIZING v_NrmErr USING NLP;
-  IF ( m_balSam.numInfes > 0,
-     Abort "SAM could not be balanced, Stop, in file: %system.fn% , before line: %system.incline%";
-  );
+  solve m_balSam minimizing v_NrmErr using nlp;
+  abort $ (m_balSam.numInfes > 0) "SAM could not be balanced, Stop, in file: %system.fn% , before line: %system.incline%";
+
   p_problem3D(r,rows,cols) $ (p_sam(r,rows,cols) lt 0) = p_sam(r,rows,cols);
   $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Negative SAM entries after balancing step, in file: %system.fn%, line: %system.incline%"
 
@@ -615,7 +609,7 @@ $offlisting
 *
   v_xf.fx(r,f,s) = v_xf.l(r,f,s);
 *
-  solve m_fac using MCP
+  solve m_fac using mcp
   abort $ m_fac.sumInfes " Benchmarking of factor supply failed, in file: %system.fn%, line: %system.incline%";
 
   if ( execerror, abort "Run-Time error related to benchmarking of factor supply, in file: %system.fn%, line: %system.incline%");
@@ -732,7 +726,7 @@ $offlisting
 * --- test calibation at fixed input prices and given output quantitie
 *
   m_sup.iterlim=0;
-  solve m_sup using MCP;
+  solve m_sup using mcp;
   abort $ m_sup.sumInfes " Benchmarking of production functions failed, in file: %system.fn%, line: %system.incline%";
 
   if ( execerror, abort "Run-Time error related to benchmarking of production functions, in file: %system.fn%, line: %system.incline%");
@@ -791,7 +785,6 @@ $offlisting
   v_pf.fx(r,f)   = v_pf.l(r,f);
   v_px.fx(r,c)   = v_px.l(r,c);
 
-
   model m_inc /
                 e_regy.v_regy
                 e_yTaxS.v_yTax
@@ -803,7 +796,7 @@ $offlisting
 
   m_inc.iterlim   = 0;
   m_inc.holdfixed = 1;
-  solve m_inc using MCP;
+  solve m_inc using mcp;
   abort $ m_sup.sumInfes " Benchmarking of income distribution failed, in file: %system.fn%, line: %system.incline%";
 
   if ( execerror, abort "Run-Time error related to benchmarking of income distribution, in file: %system.fn%, line: %system.incline%");
@@ -859,8 +852,7 @@ $offlisting
 *      minimum commitment levels Gamma for LES demand system
 *      and calculation of Utility
 *
-
-  Model m_calLES /e_xah ,e_dummy/;
+  model m_calLES /e_xah ,e_dummy/;
   m_calLES.Solprint  = 1;
   m_calLES.Limcol    = 0;
   m_calLES.Limrow    = 0;
@@ -894,7 +886,7 @@ $offlisting
   /;
   m_dem.iterlim   = 0;
   m_dem.holdfixed = 1;
-  solve m_dem using MCP;
+  solve m_dem using mcp;
   abort $ m_dem.sumInfes " Benchmarking of final demand systems failed, in file: %system.fn%, line: %system.incline%";
 
   if ( execerror, abort "Run-Time error related to benchmarking of demand systems, in file: %system.fn%, line: %system.incline%");
@@ -960,12 +952,12 @@ $offlisting
 *
 *---------------------------------------------------------------------------------------------------
 
-   set checkScens / Bench,HomogT,Test /;
+  set checkScens / Bench,HomogT,Test /;
 *
 * --- Benchmark test: Are all model equations feasible at start point? (set solver iterations to zero)
 *
   m_cge.iterlim = 0;
-  solve m_cge using MCP;
+  solve m_cge using mcp;
   abort $ m_cge.sumInfes " Benchmarking test not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   if ( execerror, abort "Run-Time error related to benchmark test solve, in file: %system.fn%, line: %system.incline%");
 
@@ -975,7 +967,7 @@ $offlisting
 *
   v_px.fx(r,c) $ (c.pos eq 1) = v_px.l(r,c)*1.1;
   m_cge.iterlim = 10000;
-  solve m_cge using MCP;
+  solve m_cge using mcp;
   abort $ m_cge.sumInfes " Homogeniety test for full model not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   if ( execerror, abort "Run-Time error related to homogeniety test solve, in file: %system.fn%, line: %system.incline%");
 
@@ -993,7 +985,7 @@ $offlisting
 *
   v_px.fx(r,c) $ (c.pos eq 1) = v_px.l(r,c)/1.1;
   m_cge.iterlim = 10000;
-  solve m_cge using MCP;
+  solve m_cge using mcp;
   abort $ m_cge.sumInfes " Test with benchmark price solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   if ( execerror, abort "Run-Time error related to homogeniety reset test solve, in file: %system.fn%, line: %system.incline%");
 
@@ -1019,7 +1011,7 @@ $offlisting
 
   p_xf(R,"Cap") = p_xf(r,"cap") * 1.10;
 
-  SOLVE m_cge using MCP;
+  solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with increased capital supply not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   if ( execerror, abort "Run-Time error in simultion 'More cap', in file: %system.fn%, line: %system.incline%");
   $$batinclude "store_res.gms" "'More cap'"
@@ -1030,7 +1022,7 @@ $offlisting
 
   p_xf(R,"lab") = p_xf(r,"lab") * 1.10;
 
-  SOLVE m_cge using MCP;
+  solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with increased labor supply not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   if ( execerror, abort "Run-Time error in simultion 'More lab', in file: %system.fn%, line: %system.incline%");
   $$batinclude "store_res.gms" "'More lab'"
@@ -1039,7 +1031,7 @@ $offlisting
 * --- (c) %1 t.p. in all sector
 
   p_axp(r,s) = 1.01;
-  SOLVE m_cge using MCP;
+  solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with high technial progress not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   if ( execerror, abort "Run-Time error in simultion '1%Tp', in file: %system.fn%, line: %system.incline%");
   $$batinclude "store_res.gms" "'1%Tp'"
@@ -1049,7 +1041,7 @@ $offlisting
 
   p_oTax(r,c) = p_oTax(r,c) * 0.5;
 
-  SOLVE m_cge using MCP;
+  solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with halved output taxes not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   $$batinclude "store_res.gms" "'half_oTax'"
   if ( execerror, abort "Run-Time error in simultion 'half_oTax', in file: %system.fn%, line: %system.incline%");
@@ -1058,7 +1050,7 @@ $offlisting
 * --- (e) remove factor taxes
 
   p_fTax(r,f) = eps;
-  SOLVE m_cge using MCP;
+  solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with removed factor taxes not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   if ( execerror, abort "Run-Time error in simultion 'no_fTax', in file: %system.fn%, line: %system.incline%");
   $$batinclude "store_res.gms" "'no_fTax'"
