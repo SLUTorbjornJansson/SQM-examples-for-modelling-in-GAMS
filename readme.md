@@ -3,14 +3,16 @@ A set of three different economic models implemented in GAMS with examples of te
 
 ## Partial equilibrium
 File: pe/multiMarket.gms
-
-A partial equilibrium model with two commodities with synthetic price and quantity. The model contains examples of assertion points (?) for valid input data, recovery of the calibration point, and economically sensible response of the calibrated model. By uncommenting indicated lines the model can be corrupted and the errors triggered. The assertion points are indicated by comments enclosed starting in five dashes, "-----".
+A partial equilibrium model with two commodities with synthetic price and quantity (data input, benchmarking, test runs, reporting code)
+see pe/readme.md for furter information
 
 ## Computable General Equilibrium
 File: cge/cge.gms
+A CGE model with SAM input (synthetic), balancing, benchmarking, and reporting codem and test runs
 
-A CGE model with SAM input, balancing, benchmarking, and reporting code. The code implements various checks.
+see cge/readme.md for furter information
 
 ## A single farm model
-File: farm/?.gms
+File: farm/herd_dyn.gms
+A single-farm optimization model depicting decision on a dairy herd and its feeding
 

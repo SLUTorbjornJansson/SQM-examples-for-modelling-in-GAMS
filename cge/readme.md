@@ -1,10 +1,14 @@
 ### This folder contains the sample CGE model (SAM input, balancing, benchmarking, reporting code) with various checks
 
 cge.gms:       A simple single-country CGE without external trade
-store_res.gms: Populates a result array with quantity, price and value information from the model results. The value information is used to construct a SAM.
-samCheck.gms:  Takes variables depicting a SAM as input and check if it is balanced.
+
+store_res.gms: Populates a result array with quantity, price and value information from the model results.
+               The value information is used to construct a SAM.
+
+samCheck.gms:  Takes a variable v_sam depicting a SAM as input and check if it is balanced.
 
 The code of cge.gms comprises different checks:
+
 (1) Are there empty columns/Rows in the SAM?
 (2) After using a NLP program to balance the SAM: use samCheck if the resulting SAM is balanced
 (3) Check for negative transformation elasticities
@@ -19,9 +23,12 @@ The code of cge.gms comprises different checks:
 (11) Homogeniety test with 10% increase in numeraire price
 (12) Check that quantities do not change if numeraire is reset to unity
 
-After each block, a check for compile and run time errors is performed. After each model solve, a check for zero number of infeasibilities.
+After each block, a check for compile and run time errors is performed.
+After each model solve, a check for zero number of infeasibilities is triggered.
 
-The code comprises 5 test simulations (10% more capital, 10% more labor, 1% tfp, halving of output taxes, removal of factor taxes). For each simulation (and the test 10,11,12), store_res.gms comprises checks:
+The code comprises 5 test simulations (10% more capital, 10% more labor, 1% tfp, halving of output taxes, removal of factor taxes).
+
+For each simulation (and the test 10,11,12), store_res.gms comprises checks:
 
 (a) Non-negativity of selected quantities and prices
 (b) Check that EV calculation returns a zero for benchmark and homogeniety tests
