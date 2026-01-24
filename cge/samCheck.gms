@@ -5,13 +5,13 @@ $ontext
 
    GAMS file : SAMCHECK.GMS
 
-   @purpose  :
-   @author   :
+   @purpose  : Check if a given SAM stored on variable VSAM.L is balanced
+   @author   : W.Britz
    @date     : 23.01.26
    @since    :
    @refDoc   :
    @seeAlso  :
-   @calledBy :
+   @calledBy : cge.gms, store_res.gms
 
 $offtext
 ********************************************************************************
@@ -32,4 +32,5 @@ $offtext
   p_samCheck(r,bRows,"revenue") $ (not sum(sameas(bRows,bCols), p_samCheck(R,"diff",BCols))) = 0;
 
   abort $ card(p_samCheck) " Check for balanced SAM failed for '%1', in file: %system.fn%, line: %system.incline%",p_samCheck,v_sam.l;
+  if ( execerror, abort "Run-Time error in file: %system.fn%, line: %system.incline%");
   $$if not errorfree $abort Compilation errors in SAM balancing, in file: %system.fn% , before line: %system.incline%
