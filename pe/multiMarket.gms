@@ -141,7 +141,10 @@ $offtext
   parameter p_res(i,*,*);
   $$batinclude 'store_res.gms' "'bas'"
 
-  if ( execerror, abort "Compilation errors in benchmark checks and reporting, in file: %system.fn%, line: %system.incline%");
+* ----- Uncomment to provoke an execution error in the benchmark checks and reporting
+*  p_pBase("pigs") = 1/0;
+  p_problem1D("execError") = execerror;
+  $$batinclude ../shared/assert_no_problem.gms p_problem1D "Execution errors in benchmark checks and reporting"
   $$if not errorfree $abort Compilation errors in benchmark checks and reporting, in file: %system.fn% , before line: %system.incline%
 
 * ------------------------------------------------------------------------------
