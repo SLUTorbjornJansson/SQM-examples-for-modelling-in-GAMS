@@ -5,9 +5,10 @@ $ontext
 
    GAMS file : multiMarket.gms
 
-   @purpose  : Didactic model with examples of various checks
-   @author   : W. Britz
-   @date     : 16.10.17
+   @purpose  : Didactic model with examples of various checks. Uncomment lines
+               preceded with five dashes, "-----", to trigger errors.
+   @author   : W. Britz, T. Jansson
+   @date     : 2026-01-27
    @since    :
    @refDoc   :
    @seeAlso  :
@@ -115,7 +116,7 @@ $offtext
 *
 * ------------------------------------------------------------------------------
 
-* -----   Uncomment one of the following lines to provoke an error in the calibration test
+* ----- Uncomment one of the following lines to provoke an error in the calibration test
 * p_subs("pigs") = 1;
 * p_pBase("poultry") = 200;
 
