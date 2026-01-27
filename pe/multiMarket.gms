@@ -184,8 +184,16 @@ $offtext
   p_subs("pigs")    = 30;
   p_subs("poultry") = 10;
 
+* ----- Uncomment to provoke infeasibility error
+* m_MultiMarket.iterlim = 0;
+
   solve m_MultiMarket using cns;
-  abort $ (m_MultiMarket.numInfes > 0) "Simualtio  resulted in infeasibilities, in file: %system.fn%, line: %system.incline%";
+
+* --- Catch some possible problems with the solution
+  p_problem1D("execError") = execerror;
+  p_problem1D("numInfes")  = m_MultiMarket.numInfes;
+  p_problem1D("numNOpt")   = m_MultiMarket.numNOpt;
+  $$batinclude ../shared/assert_no_problem.gms p_problem1D "Error solving the model with subsidies - inspect p_problem1D for details"
 
   $$batinclude 'store_res.gms' "'subs'"
 
