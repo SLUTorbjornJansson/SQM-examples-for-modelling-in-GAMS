@@ -5,9 +5,10 @@ $ontext
 
    GAMS file : multiMarket.gms
 
-   @purpose  : Didactic model with examples of various checks
-   @author   : W. Britz
-   @date     : 16.10.17
+   @purpose  : Didactic model with examples of various checks. Uncomment lines
+               preceded with five dashes, "-----", to trigger errors.
+   @author   : W. Britz, T. Jansson
+   @date     : 2026-01-27
    @since    :
    @refDoc   :
    @seeAlso  :
@@ -115,7 +116,7 @@ $offtext
 *
 * ------------------------------------------------------------------------------
 
-* -----   Uncomment one of the following lines to provoke an error in the calibration test
+* ----- Uncomment one of the following lines to provoke an error in the calibration test
 * p_subs("pigs") = 1;
 * p_pBase("poultry") = 200;
 
@@ -141,7 +142,10 @@ $offtext
   parameter p_res(i,*,*);
   $$batinclude 'store_res.gms' "'bas'"
 
-  if ( execerror, abort "Compilation errors in benchmark checks and reporting, in file: %system.fn%, line: %system.incline%");
+* ----- Uncomment to provoke an execution error in the benchmark checks and reporting
+*  p_pBase("pigs") = 1/0;
+  p_problem1D("execError") = execerror;
+  $$batinclude ../shared/assert_no_problem.gms p_problem1D "Execution errors in benchmark checks and reporting"
   $$if not errorfree $abort Compilation errors in benchmark checks and reporting, in file: %system.fn% , before line: %system.incline%
 
 * ------------------------------------------------------------------------------
@@ -181,8 +185,16 @@ $offtext
   p_subs("pigs")    = 30;
   p_subs("poultry") = 10;
 
+* ----- Uncomment to provoke infeasibility error
+* m_MultiMarket.iterlim = 0;
+
   solve m_MultiMarket using cns;
-  abort $ (m_MultiMarket.numInfes > 0) "Simualtio  resulted in infeasibilities, in file: %system.fn%, line: %system.incline%";
+
+* --- Catch some possible problems with the solution
+  p_problem1D("execError") = execerror;
+  p_problem1D("numInfes")  = m_MultiMarket.numInfes;
+  p_problem1D("numNOpt")   = m_MultiMarket.numNOpt;
+  $$batinclude ../shared/assert_no_problem.gms p_problem1D "Error solving the model with subsidies - inspect p_problem1D for details"
 
   $$batinclude 'store_res.gms' "'subs'"
 
