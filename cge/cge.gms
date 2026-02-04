@@ -979,7 +979,7 @@ $offlisting
 
   p_problem3D(r,f,a) $ (abs(p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","HomogT")) gt 1.E-8)
    = p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","HomogT");
-  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Homogeniety test failed for product demands, in file: %system.fn%, line: %system.incline%"
+  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Homogeniety test failed for factort demands, in file: %system.fn%, line: %system.incline%"
 *
 * --- Simulation check: reset numeraire to unity, run simulation, and check that product and factor demands are unchanged
 *
