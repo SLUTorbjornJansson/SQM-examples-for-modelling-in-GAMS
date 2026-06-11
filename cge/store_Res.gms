@@ -58,7 +58,7 @@ $offtext
            * prod(c $ p_alphaa(r,c,"hou"),
                 (p_alphaa(r,c,"hou")/[v_px.l(r,c)*(1+p_oTax(r,c))])**p_alphaa(r,c,"hou") );
 *
-*  --- price indices = spent divided by utility
+*  --- price indices = expenditures divided by utility
 *
    p_res(r,c,aa,"p",%1) = v_px.l(r,c) * (1+p_oTax(r,c));
 
@@ -74,7 +74,7 @@ $offtext
 *
 *  --- Equivalent variation: expenditure to reach same utility
 *      as in current simulation (reflects changes in prices and income)
-*      under benach market prices minus benchmark expenditures
+*      under benchmark prices minus benchmark expenditures
 *
    p_res(r,"gov","ev","v",%1) =
        + p_res(r,"gov","u","v",%1)
@@ -123,8 +123,8 @@ $offtext
 *  --- store sector output quantities and tax inclusive prices
 *
    p_res(r,"q",s,"q",%1) = v_x.l(r,s);
-   p_res(r,s,c,"q",%1)   = SUM(s_to_c(s,c), v_x.l(r,s));
-   p_res(r,s,c,"p",%1)   = SUM(s_to_c(s,c), v_px.l(r,c)* (1+p_oTax(r,c)));
+   p_res(r,s,c,"q",%1)   = sum(s_to_c(s,c), v_x.l(r,s));
+   p_res(r,s,c,"p",%1)   = sum(s_to_c(s,c), v_px.l(r,c)* (1+p_oTax(r,c)));
 *
 *  --- store quantities and prices of Armington demands
 *
@@ -139,8 +139,8 @@ $offtext
 *
 *  --- store tax base for output taxes
 *
-   p_res(r,"gov",s,"q",%1) = SUM(s_to_c(s,c), v_x.l(r,s));
-   p_res(r,"gov",s,"p",%1) = SUM(s_to_c(s,c), v_px.l(r,c) * p_oTax(r,c));
+   p_res(r,"gov",s,"q",%1) = sum(s_to_c(s,c), v_x.l(r,s));
+   p_res(r,"gov",s,"p",%1) = sum(s_to_c(s,c), v_px.l(r,c) * p_oTax(r,c));
 *
 *  --- store tax base for factor taxes
 *
@@ -148,7 +148,7 @@ $offtext
    p_res(r,"gov",f,"v",%1) = p_xf(r,f)*v_pf.l(r,f) * p_fTax(r,f);
    p_res(r,"gov",f,"p",%1) $ p_res(r,"gov",f,"q",%1) = p_res(r,"gov",f,"v",%1)/p_res(r,"gov",f,"q",%1);
 *
-*  --- close accounts with savings (regional household approach does not differentiate savings by insitution)
+*  --- close accounts with savings (regional household approach does not differentiate savings by institution)
 *
    p_res(r,"inv",fdn,"p",%1) = 1;
    p_res(r,"inv",fdn,"q",%1)
@@ -156,7 +156,7 @@ $offtext
        - sum(rows,p_res(r,rows,fdn,"q",%1)*p_res(r,rows,fdn,"p",%1))
        + p_res(r,"inv",fdn,"q",%1)*p_res(r,"inv",fdn,"p",%1);
 *
-*  --- calculate new SAM accounts from price times quantities, stored on "v" position
+*  --- calculate new SAM accounts from prices times quantities, stored on "v" position
 *
    p_res(r,rows,cols,"v",%1) = p_res(r,rows,cols,"p",%1) * p_res(r,rows,cols,"q",%1);
 *

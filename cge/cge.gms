@@ -28,73 +28,76 @@ $offlisting
 *
 *---------------------------------------------------------------------------------------------------
 
-  SET r "Regions"     / r1     "MyCountry"   /;
+  set r "Regions"     / r1     "MyCountry"   /;
 
-  SET SIMs(*) "Counterfactual scenarios run";
+  set SIMs(*) "Counterfactual scenarios run";
 *
-* --- sets describring the structur of the SAM
+* --- sets describring the structure of the SAM
 *
-  SET set_s "Sectors"     / S_Agr "Agriculture"
-                            S_Ind  "Industry"
-                            S_Ser  "Services"    /;
+  set set_s "Sectors"           / S_Agr "Agriculture"
+                                  S_Ind  "Industry"
+                                  S_Ser  "Services"
+                                /;
 
-  set set_c "Commodities" / C_Agr  "Agriculture"
-                            C_Ind  "Industry"
-                            C_Ser  "Services"    /;
+  set set_c "Commodities"       / C_Agr  "Agriculture"
+                                  C_Ind  "Industry"
+                                  C_Ser  "Services"
+                                /;
 
-  set set_f "Factors" / cap  "capital"
-                        lab  "labor"
-                         /;
+  set set_f "Factors"           / cap  "capital"
+                                  lab  "labor"
+                                /;
 
-  SET set_i "Institutions"  / Hou "Household"
-                              Gov "Government"
-                              Inv "Investments and savings"
-                            /;
+  set set_i "Institutions"      / Hou "Household"
+                                  Gov "Government"
+                                  Inv "Investments and savings"
+                                /;
 
-  SET Cols "Columns of the SAM" /
-        set.set_s
-        set.set_c
-        set.set_f
-        set.set_i
-        Revenue
-  /;
+  set cols "Columns of the SAM" / set.set_s
+                                  set.set_c
+                                  set.set_f
+                                  set.set_i
+                                  Revenue
+                                /;
 
-  SET BCols(cols) "Columns to balance";
-  BCols(Cols)         = YES;
-  BCols("Revenue")    = NO;
 
-  SET Rows "Rows of the SAM" /
-        set.set_s
-        set.set_c
-        set.set_f
-        set.set_i
-        Expend
-  /;
+  set rows "rows of the SAM"    /
+                                  set.set_s
+                                  set.set_c
+                                  set.set_f
+                                  set.set_i
+                                  Expend
+                                /;
 
-  SET BRows(Rows) "Rows to balance";
-  BRows(Rows)         = YES;
-  BRows("Expend")     = NO;
+  set brows(rows) "rows to balance";
+  brows(rows)         = yes;
+  brows("Expend")     = no;
 
-  set aa(cols) "All demand agents" / set.set_s,set.set_i /;
-  SET s(aa) "Sectors"     / set.set_s /;
+  set bcols(cols) "Columns to balance";
+  bcols(cols)         = yes;
+  bcols("Revenue")    = no;
+
+  set aa(cols) "All demand agents"  / set.set_s,set.set_i /;
+  set s(aa) "Sectors"               / set.set_s /;
   alias(s,s1,a);
 
   set fdn(aa) "Final demand agents" / set.set_i /;
   alias(fdn,fdn1);
 
-  set c(rows) "Commodities" / set.set_c /;
+  set c(rows) "Commodities"         / set.set_c /;
   alias(c,c1);
 
-  set f(rows) "Factors"     / set.set_f /;
+  set f(rows) "Factors"             / set.set_f /;
   alias(f,f1);
 
-  set tax "Tax flows" / s "Sectors",f "factors" /;
-  set dem "Final demands" / set.set_i /;
+  set tax "Tax flows"               / s "Sectors",f "factors" /;
+  set dem "Final demands"           / set.set_i /;
 
   set s_to_c(s,c) "Connection between sector and commodities"
-                      / S_AGR.C_AGR,
-                        S_IND.C_IND,
-                        S_Ser.C_Ser          /;
+                                   / S_AGR.C_AGR,
+                                     S_IND.C_IND,
+                                     S_Ser.C_Ser
+                                   /;
 
   $$if not errorfree $abort Compilation errors in set definitions, in file: %system.fn% , before line: %system.incline%
   if ( execerror, abort "Run-Time error in set definitions, in file: %system.fn%, line: %system.incline%");
@@ -108,7 +111,7 @@ $offlisting
 *
 *
 * --- This give an overview on transactions stored in blocks of the SAM. Note that the overview
-*     comprises a Rest-of-the-World account not found in the actual examples
+*     comprises a Rest-of-the-World account not found in the actual example
 *
 * TABLE SAM
 *
@@ -131,10 +134,10 @@ $offlisting
 *
 * r1.Expend
 
-  TABLE p_SAM(r,rows,cols) "Social accounting matrix as total values (e.g. mio $), see SAM.xls"
+  table p_SAM(r,rows,cols) "Social accounting matrix in values (e.g. mio $)"
 *
 *
-*    Along one column: the "costs" or "expenditure"
+*    Along one column: the "costs" or "expenditures"
 *    Along one row:    the "revenues"
 *
 *
@@ -164,10 +167,10 @@ $offlisting
 * ----- uncomment the following line to trigger an error
 * p_sam(r,"lab",cols) = 0;
 
-  p_problem2D(r,rows) $ (not sum(cols,p_sam(r,rows,cols))) = YES;
+  p_problem2D(r,rows) $ (not sum(cols,p_sam(r,rows,cols))) = yes;
   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Empty rows in SAM for at least one region, in file: %system.fn%, line: %system.incline%"
 
-  p_problem2D(r,cols) $ (not sum(rows,p_sam(r,rows,cols))) = YES;
+  p_problem2D(r,cols) $ (not sum(rows,p_sam(r,rows,cols))) = yes;
   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Empty columns in SAM for at least one region, in file: %system.fn%, line: %system.incline%"
 
   display p_SAM;
@@ -191,8 +194,8 @@ $offlisting
      p_omegaf(r,f)     "Transformation elasticity in factor supply"
 
      p_io(r,c,a)       "Leontief input cofficients of intermediate demand"
-     p_af(r,f,a)       "Share parameter for factor in VA nest"
-     p_and(r,a)        "Share parameter of intermediate composition in production output"
+     p_af(r,f,a)       "Share parameter for primary factor in VA nest"
+     p_and(r,a)        "Share parameter of intermediate composite in production output"
      p_ava(r,a)        "Share parameter of value added in production output"
      p_axp(r,a)        "Production frontier (shift parameter)"
      p_gf(r,f,a)       "Factor revenue shares in CET"
@@ -242,12 +245,12 @@ $offlisting
 *
 *   --- relating to SAM balancing
 *
-    e_expend(R,*)        "Definition of expenditure along one column of the SAM"
-    e_Rev(R,*)           "Definition of revenue along one row of the SAM"
-    e_Bal(R,*)           "Balance expenditure and revenue"
-    e_MinDev              "Minimise normalised differences between original SAM and balanced one"
+    e_expend(r,*)        "Definition of expenditure along one column of the SAM"
+    e_rev(r,*)           "Definition of revenue along one row of the SAM"
+    e_bal(r,*)           "Balance expenditure and revenue"
+    e_minDev             "Minimise normalised squared differences between original SAM and balanced one"
 *
-*   --- income generation distribution
+*   --- income generation and distribution
 *
     e_regy(r)           "Regional income"
     e_ytaxs(r,tax)      "Sectoral taxes"
@@ -272,11 +275,11 @@ $offlisting
     e_xf(r,f,a)         "Factor demand"
     e_xaint(r,c,a)      "Intermediate demand"
     e_x(r,s)            "Market balance commodities"
-    e_pf(r,f)          "CET Factor price aggregator"
-    e_pfLIN(r,f)       "Market balance factor, linear aggregation"
-    e_pfaLIN(r,f,a)    "Uniform factor prices, linear aggregation"
-    e_pfaCET(r,f,a)    "Market balance factor, linear aggregation"
-    e_xf(r,f,a)        "CET distribtion of factor supply to sector"
+    e_pf(r,f)           "CET Factor price aggregator"
+    e_pfLIN(r,f)        "Market balance factor, linear aggregation"
+    e_pfaLIN(r,f,a)     "Uniform factor prices, linear aggregation"
+    e_pfaCET(r,f,a)     "Market balance factor, linear aggregation"
+    e_xf(r,f,a)         "CET distribtion of factor supply to sector"
 
     e_dummy             "Dummy objective to use NLP instead CNS model"
   ;
@@ -306,25 +309,25 @@ $offlisting
 *
 * --- define expenditure for each column as sum over the rows
 *
-  e_expend(R,BCols)  ..   v_sam(R,"Expend",BCols)    =E= SUM(BRows,  v_sam(R,BRows,BCols));
+  e_expend(r,bcols)  ..   v_sam(r,"Expend",bcols)    =E= SUM(brows,  v_sam(r,brows,bcols));
 *
 * --- define revenues for each row as sum over the columns
 *
-  e_Rev(R,BRows)  ..      v_sam(R,BRows,"Revenue")   =E= SUM(BCols,  v_sam(R,BRows,BCols));
+  e_rev(r,brows)  ..      v_sam(r,brows,"Revenue")   =E= SUM(bcols,  v_sam(r,brows,bcols));
 *
 * --- revenues and expenditure for matching rows/columns must be equal
 *
-  e_Bal(R,BRows)  ..      v_sam(R,BRows,"Revenue")   =E= sum(sameas(BRows,Bcols),v_sam(R,"Expend",BCols));
+  e_bal(r,brows)  ..      v_sam(r,brows,"Revenue")   =E= sum(sameas(brows,Bcols),v_sam(r,"Expend",bcols));
 
 *
-* --- define average squared relative differnces against given SAM entries
+* --- define average squared relative differences against given SAM entries
 *
-  e_MinDev     ..
+  e_minDev     ..
 
-     v_NrmErr * sum( (R,Rows,Cols) $ p_SAM(R,Rows,Cols), 1.)/100.
+     v_NrmErr * sum( (r,rows,cols) $ p_SAM(r,rows,cols), 1.)/100.
             =E=
-                sum( (R,Rows,Cols) $ p_SAM(R,Rows,Cols),
-                                    SQR( (v_sam(R,Rows,Cols)-p_SAM(R,Rows,Cols))/p_SAM(R,Rows,Cols)));
+                sum( (r,rows,cols) $ p_SAM(r,rows,cols),
+                                    SQR( (v_sam(r,rows,cols)-p_SAM(r,rows,cols))/p_SAM(r,rows,cols)));
 *
 * -------------------------------------------------------------------------------------------------------------------------
 *
@@ -342,15 +345,15 @@ $offlisting
 *
 * --- taxes on output
 *
-  e_ytaxS(R,"s") ..
+  e_ytaxS(r,"s") ..
 
-    v_yTax(R,"s")  =E= SUM(s_to_c(s,c), v_x(r,s) * v_px(r,c) * p_oTax(r,c));
+    v_yTax(r,"s")  =E= SUM(s_to_c(s,c), v_x(r,s) * v_px(r,c) * p_oTax(r,c));
 *
 * --- taxes on factor income
 *
-  e_ytaxF(R,"f") ..
+  e_ytaxF(r,"f") ..
 
-    v_yTax(R,"f")  =E= SUM( f,    p_xf(r,f) * v_pf(r,f) * p_fTax(r,f));
+    v_yTax(r,"f")  =E= SUM( f,    p_xf(r,f) * v_pf(r,f) * p_fTax(r,f));
 *
 * --- household consumption expenditure, value share on total regional income
 *
@@ -394,8 +397,8 @@ $offlisting
   e_xah(r,c,"hou") ..
 
     v_xa(r,c,"hou") =E=
-                        v_Gamma(r,c) + p_alphaa(R,c,"hou")/[v_px(r,c)*(1+p_oTax(r,c))]
-                          * (v_yc(r) -SUM(c1, v_Gamma(r,c1)*v_px(R,c1)*(1+p_oTax(r,c1))   ));
+                        v_Gamma(r,c) + p_alphaa(r,c,"hou")/[v_px(r,c)*(1+p_oTax(r,c))]
+                          * (v_yc(r) -SUM(c1, v_Gamma(r,c1)*v_px(r,c1)*(1+p_oTax(r,c1))   ));
 
 * -------------------------------------------------------------------------------------------------------------------------
 *
@@ -421,22 +424,22 @@ $offlisting
 
 * --- Intermediate composite price: dual price aggreagator
 
-  e_pnd(R,s) ..
+  e_pnd(r,s) ..
 *
      v_pnd(r,s) =E= sum(c, p_io(r,c,s) *  [v_px(r,c)*(1+p_oTax(r,c))]**(1-p_sigman(r,s)))** ( 1/(1-p_sigman(r,s)));
 
 * --- Demand for intermediate composite
 
-  e_nd(R,s) ..
+  e_nd(r,s) ..
 *
-     v_nd(r,s) =E=  p_and(r,s)* v_x(r,s) * (sum(s_to_c(s,c),v_px(r,c)) / v_pnd(r,s)) ** p_sigmap(r,s)
+     v_nd(r,s) =E=  p_and(r,s)* v_x(r,s) * (sum(s_to_c(s,c),v_px(r,c))/v_pnd(r,s)) ** p_sigmap(r,s)
                       * p_axp(r,s) ** (p_sigmap(r,s)-1);
 
 * --- Demand for value added composite
 
-  e_va(R,s) ..
+  e_va(r,s) ..
 *
-     v_va(r,s) =E=  p_ava(r,s)* v_x(r,s) * (sum(s_to_c(s,c),v_px(r,c))/ v_pva(r,s)) ** p_sigmap(r,s)
+     v_va(r,s) =E=  p_ava(r,s)* v_x(r,s) * (sum(s_to_c(s,c),v_px(r,c))/v_pva(r,s)) ** p_sigmap(r,s)
                       * p_axp(r,s) ** (p_sigmap(r,s)-1);
 
 * --- Factor demands
@@ -507,15 +510,15 @@ $offlisting
 
 *
 * --- The following model comprises the balances in value terms
-*     and minimizes th deviation between the given SAM and the balanced one
+*     and minimizes the deviation between the given SAM and the balanced one
 *     Stored in the "BAL" column of the result array p_res after the calibration step
 *
 
   model m_balSam /
         e_expend
-        e_Rev
-        e_Bal
-        e_MinDev
+        e_rev
+        e_bal
+        e_minDev
   /;
 
   m_balSam.Solprint  = 1;
@@ -526,24 +529,24 @@ $offlisting
 
 * --- Calculate the total expenditure/revenue
 
-  p_sam(R,"expend",BCols ) = sum( BRows,  p_sam(R,BRows,BCols));
-  p_sam(R,BRows,"revenue") = sum( BCols,  p_sam(R,BRows,BCols));
+  p_sam(r,"expend",bcols ) = sum(brows, p_sam(r,brows,bcols));
+  p_sam(r,brows,"revenue") = sum(bcols, p_sam(r,brows,bcols));
 
 * --- Store the unbalanced SAM in the result array
 
-  p_res(R,Rows,Cols,"V","SAM") = p_SAM(R,Rows,Cols);
+  p_res(r,rows,cols,"V","SAM") = p_SAM(r,rows,cols);
 *
 * --- Initialise variables to the values of the unbalanced SAM
 *     and introduce lower and upper limits
 
-  v_sam.L(R,Rows,Cols)  = p_SAM(R,Rows,Cols);
-  v_sam.LO(R,Rows,Cols) = p_SAM(R,Rows,Cols) * 0.1;
-  v_sam.UP(R,Rows,Cols) = p_SAM(R,Rows,Cols) * 10.;
+  v_sam.L(r,rows,cols)  = p_SAM(r,rows,cols);
+  v_sam.LO(r,rows,cols) = p_SAM(r,rows,cols) * 0.1;
+  v_sam.UP(r,rows,cols) = p_SAM(r,rows,cols) * 10.;
 
 * --- Balance the SAM
 
   solve m_balSam minimizing v_NrmErr using nlp;
-  abort $ (m_balSam.numInfes > 0) "SAM could not be balanced, Stop, in file: %system.fn% , before line: %system.incline%";
+  abort $ (m_balSam.numInfes > 0) "SAM could not be balanced, stop, in file: %system.fn% , before line: %system.incline%";
 
   p_problem3D(r,rows,cols) $ (p_sam(r,rows,cols) lt 0) = p_sam(r,rows,cols);
   $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Negative SAM entries after balancing step, in file: %system.fn%, line: %system.incline%"
@@ -567,7 +570,7 @@ $offlisting
 *
   p_omegaf(r,"lab") = inf;
 *
-* --- Sluggish capital mobiluity
+* --- Sluggish capital mobility
 *
   p_omegaf(r,"cap") = 0.5;
 *
@@ -589,11 +592,11 @@ $offlisting
 *
   p_xf(r,f)      = sum(s, v_xf.l(r,f,s));
 *
-* --- factor use shares
+* --- factor use shares (= calibrated share form as price are equal to unity)
 *
   p_gf(r,f,a)    = v_xf.l(r,f,a)/p_xf(r,f);
 
-  model m_fac /
+  model m_fac "Sub-model for factor supply" /
                 e_pf.v_pf
                 e_pfLIN.v_pf
                 e_pfaLIN.v_pfa
@@ -609,7 +612,7 @@ $offlisting
 *
   v_xf.fx(r,f,s) = v_xf.l(r,f,s);
 *
-  solve m_fac using mcp
+  solve m_fac using mcp;
   abort $ m_fac.sumInfes " Benchmarking of factor supply failed, in file: %system.fn%, line: %system.incline%";
 
   if ( execerror, abort "Run-Time error related to benchmarking of factor supply, in file: %system.fn%, line: %system.incline%");
@@ -622,7 +625,7 @@ $offlisting
 *---------------------------------------------------------------------------------------------------
 
 *
-* --- subsitution elasticities, we mimick the GTAP Standard model
+* --- substitution elasticities, we mimick the GTAP Standard model
 *
 *     (1) No substitution between value added and intermediate composite (= LEONTIEF)
 *     (3) No substitution inside intermediate composite (=LEONTIEF)
@@ -640,14 +643,14 @@ $offlisting
   p_problem2D(r,s) $ (p_sigmav(r,s) le 0) = p_sigmav(r,s)+eps;
   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Non-positive substitution elasticities in value-added nest, in file: %system.fn%, line: %system.incline%"
 *
-* --- prices are unity in benchmark
+* --- prices are unity at benchmark
 *     (= SAM values are interpreted as quantity indices)
 *
   v_pnd.l(r,s)    = 1;
   v_pva.l(r,s)    = 1;
   v_pfa.fx(r,f,a) = 1;
 *
-* --- remove fixing of factor demand from first block
+* --- remove fixing of factor demand from first block (m_fac model)
 *
   v_xf.lo(r,f,s)  = 0;
   v_xf.up(r,f,s)  = inf;
@@ -658,7 +661,7 @@ $offlisting
 *
 * --- assign intermediate demand for each commodity
 *
-  v_xa.l(r,c,s)  = v_sam.l(R,c,s);
+  v_xa.l(r,c,s)  = v_sam.l(r,c,s);
 *
 * --- calculate and assign intermediate demand composite
 *
@@ -686,6 +689,7 @@ $offlisting
   v_x.fx(r,s)    = (v_va.l(r,s) + v_nd.l(r,s))*sum(s_to_c(s,c),1+p_oTax(r,c));
 *
 * --- define share parameters in value added and intermediate demand composites
+*     (here, the price relation exponent the substiution elasticity is needed as v_px differs from unity)
 *
   p_ava(r,s)     = [v_va.l(r,s)/v_x.l(r,s)] / (sum(s_to_c(s,c),v_px.l(r,c)) / v_pva.l(r,s)) ** p_sigmap(r,s) ;
   p_problem2D(r,s) $ (p_ava(r,s) lt 0) = p_ava(r,s);
@@ -696,12 +700,14 @@ $offlisting
   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative cost share parameters for ND nest, in file: %system.fn%, line: %system.incline%"
 *
 * --- define IO-Coefficients as share of intermediate demands on intermediate composite
+*     (calibrated share form, price are unity)
 *
   p_io(r,c,s)    = v_xa.l(r,c,s)/v_nd.l(r,s);
   p_problem3D(r,c,s) $ (p_io(r,c,s) lt 0) = p_io(r,c,s);
   $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Negative IO parameters, in file: %system.fn%, line: %system.incline%"
 *
 * --- define share parameters for factors in value added composite
+*     (calibrated share form, price are unity)
 *
   p_af(r,f,s)    = v_xf.l(r,f,s)/v_va.l(r,s);
   p_problem3D(r,f,s) $ (p_af(r,f,s) lt 0) = p_af(r,f,s);
@@ -711,7 +717,7 @@ $offlisting
 *
   p_axp(r,s)     = 1;
 
-  model m_sup /
+  model m_sup "Sub-model for production functions and related demands and prices" /
                 e_va.v_va,
                 e_nd.v_nd,
                 e_pva.v_pva,
@@ -738,14 +744,14 @@ $offlisting
 *
 *---------------------------------------------------------------------------------------------------
 *
-* --- ad-avlorem factor tax rate
+* --- ad-valorem factor tax rate
 *
-  p_fTax(r,f)     = sum(sameas(cols,f),v_sam.l(r,"gov",cols)/v_sam.l(r,"expend",cols));
+  p_fTax(r,f) = sum(sameas(cols,f),v_sam.l(r,"gov",cols)/v_sam.l(r,"expend",cols));
 *
 * --- Revenues from output taxes and factor taxes
 *
-  v_yTax.l(r,"s")  = sum(s_to_c(s,c), v_x.l(r,s) * v_px.l(r,c) * p_oTax(r,c));
-  v_yTax.l(r,"f")  = sum(f,           p_xf(r,f)  * v_pf.l(r,f) * p_fTax(r,f));
+  v_yTax.l(r,"s") = sum(s_to_c(s,c), v_x.l(r,s) * v_px.l(r,c) * p_oTax(r,c));
+  v_yTax.l(r,"f") = sum(f,           p_xf(r,f)  * v_pf.l(r,f) * p_fTax(r,f));
 *
 * --- regional income: total tax income plus factor income net of taxes
 *
@@ -785,7 +791,7 @@ $offlisting
   v_pf.fx(r,f)   = v_pf.l(r,f);
   v_px.fx(r,c)   = v_px.l(r,c);
 
-  model m_inc /
+  model m_inc "Sub-model for income generation and distribution" /
                 e_regy.v_regy
                 e_yTaxS.v_yTax
                 e_yTaxF.v_yTax
@@ -831,9 +837,9 @@ $offlisting
 
 * ---- set marginal expenditure shares for LES demand system
 
-  p_alphaa(R,"C_Agr","hou") = 0.1;
-  p_alphaa(R,"C_Ind","hou") = 0.4;
-  p_alphaa(R,"C_Ser","hou") = 0.5;
+  p_alphaa(r,"C_Agr","hou") = 0.1;
+  p_alphaa(r,"C_Ind","hou") = 0.4;
+  p_alphaa(r,"C_Ser","hou") = 0.5;
 
   p_problem2D(r,c) $ (p_alphaa(r,c,"hou") lt 0) = p_alphaa(r,c,"hou")+eps;
   $$batinclude "../shared/assert_no_problem.gms" p_problem2D "Negative marginal budget shares for private demand, in file: %system.fn%, line: %system.incline%"
@@ -843,16 +849,16 @@ $offlisting
 *
 * --- the commitment terms are used to calibrate the demand system
 *
-  v_gamma.LO(R,c)     = v_sam.l(R,c,"Hou") * 0.0;
-  v_gamma.UP(R,c)     = v_sam.l(R,c,"Hou") * 0.9;
-  v_gamma.UP(R,c)     = inf;
-  v_gamma.l(R,c)      = 0;
+  v_gamma.LO(r,c) = v_sam.l(r,c,"Hou") * 0.0;
+  v_gamma.UP(r,c) = v_sam.l(r,c,"Hou") * 0.9;
+  v_gamma.UP(r,c) = inf;
+  v_gamma.l(r,c)  = 0;
 *
-* ---- Calibration model for CES share and shift parameters,
+* ---- Calibration model for LES demand system: determine
 *      minimum commitment levels Gamma for LES demand system
 *      and calculation of Utility
 *
-  model m_calLES /e_xah ,e_dummy/;
+  model m_calLES "Sub-model for calibration of LES deamnd system" /e_xah ,e_dummy/;
   m_calLES.Solprint  = 1;
   m_calLES.Limcol    = 0;
   m_calLES.Limrow    = 0;
@@ -869,7 +875,7 @@ $offlisting
 
 * --- fix parameters to calibrated solution and unfix finak demand
 
-  v_Gamma.FX(R,c)      = v_Gamma.L(R,c);
+  v_Gamma.FX(r,c)      = v_Gamma.L(r,c);
 
   v_xa.lo(r,c,"Hou") = 0;
   v_xa.up(r,c,"Hou") = inf;
@@ -880,7 +886,8 @@ $offlisting
   v_ys.fx(r) = v_ys.l(r);
   v_yc.fx(r) = v_yc.l(r);
 
-  model m_dem / e_xag.v_xa
+  model m_dem "Sub-model for final demands"
+              / e_xag.v_xa
                 e_xas.v_xa
                 e_xah.v_xa
   /;
@@ -894,7 +901,7 @@ $offlisting
 
 *---------------------------------------------------------------------------------------------------
 *
-*     (Ve) define full model (combintion of sub-models)
+*     (Ve) define full model (combination of sub-models)
 *
 *---------------------------------------------------------------------------------------------------
 
@@ -911,44 +918,44 @@ $offlisting
   m_cge.limcol    = 0;
   m_cge.solvelink = 5;
 *
-* --- remove fixing of variables for test solves / calibration above
+* --- remove fixing of variables from test solves / calibration above
 *
-  v_yc.lo(r) = 0;
-  v_yc.up(r) = inf;
+  v_yc.lo(r)         = 0;
+  v_yc.up(r)         = inf;
 
-  v_yg.lo(r) = 0;
-  v_yg.up(r) = inf;
+  v_yg.lo(r)         = 0;
+  v_yg.up(r)         = inf;
 
-  v_ys.lo(r) = 0;
-  v_ys.up(r) = inf;
+  v_ys.lo(r)         = 0;
+  v_ys.up(r)         = inf;
 
   v_xa.lo(r,c,"hou") = 0;
   v_xa.up(r,c,"hou") = inf;
 
-  v_pf.lo(r,f) = 0;
-  v_pf.up(r,f) = inf;
+  v_pf.lo(r,f)       = 0;
+  v_pf.up(r,f)       = inf;
 
-  v_pfa.lo(r,f,a) = 0;
-  v_pfa.up(r,f,a) = inf;
+  v_pfa.lo(r,f,a)    = 0;
+  v_pfa.up(r,f,a)    = inf;
 
-  v_x.lo(r,s)  = 0;
-  v_x.up(r,s)  = inf;
+  v_x.lo(r,s)        = 0;
+  v_x.up(r,s)        = inf;
 
-  v_xf.lo(r,f,s)  = 0;
-  v_xf.up(r,f,s)  = inf;
+  v_xf.lo(r,f,s)     = 0;
+  v_xf.up(r,f,s)     = inf;
 
-  v_px.lo(r,c)  = 0;
-  v_px.up(r,c)  = inf;
+  v_px.lo(r,c)       = 0;
+  v_px.up(r,c)       = inf;
 
-  v_pnd.lo(r,s)   = 0;
-  v_pnd.up(r,s)   = inf;
+  v_pnd.lo(r,s)      = 0;
+  v_pnd.up(r,s)      = inf;
 
-  v_pva.lo(r,s)   = 0;
-  v_pva.up(r,s)   = inf;
+  v_pva.lo(r,s)      = 0;
+  v_pva.up(r,s)      = inf;
 
 *---------------------------------------------------------------------------------------------------
 *
-*     (VI) Check for calibration and homogenity of degree one / zero in prices
+*     (VI) Check for sucessful calibration and homogenity of degree one / zero in prices
 *
 *---------------------------------------------------------------------------------------------------
 
@@ -997,7 +1004,7 @@ $offlisting
 
   p_problem3D(r,f,a) $ (abs(p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","Test")) gt 1.E-8)
    = p_res(r,f,a,"q","Bench") - p_res(r,f,a,"q","Test");
-  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Homogeniety test failed for product demands, in file: %system.fn%, line: %system.incline%"
+  $$batinclude "../shared/assert_no_problem.gms" p_problem3D "Homogeniety test failed for factor demands, in file: %system.fn%, line: %system.incline%"
 
   $$if not errorfree $abort Compilation errors in test runs, in file: %system.fn% , before line: %system.incline%
 
@@ -1009,31 +1016,31 @@ $offlisting
 
 * --- (a) increase capital endowment of households by 10% => higher capital availability in the economy
 
-  p_xf(R,"Cap") = p_xf(r,"cap") * 1.10;
+  p_xf(r,"Cap") = p_xf(r,"cap") * 1.10;
 
   solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with increased capital supply not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
-  if ( execerror, abort "Run-Time error in simultion 'More cap', in file: %system.fn%, line: %system.incline%");
+  if ( execerror, abort "Run-Time error in simulation 'More cap', in file: %system.fn%, line: %system.incline%");
   $$batinclude "store_res.gms" "'More cap'"
 
-  p_xf(R,"Cap") = p_xf(r,"cap") / 1.10;
+  p_xf(r,"Cap") = p_xf(r,"cap") / 1.10;
 
 * --- (b) increase labor supply of households by 10% => higher labor availability in the economy
 
-  p_xf(R,"lab") = p_xf(r,"lab") * 1.10;
+  p_xf(r,"lab") = p_xf(r,"lab") * 1.10;
 
   solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with increased labor supply not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
-  if ( execerror, abort "Run-Time error in simultion 'More lab', in file: %system.fn%, line: %system.incline%");
+  if ( execerror, abort "Run-Time error in simulation 'More lab', in file: %system.fn%, line: %system.incline%");
   $$batinclude "store_res.gms" "'More lab'"
-  p_xf(R,"lab") = p_xf(r,"lab") / 1.10;
+  p_xf(r,"lab") = p_xf(r,"lab") / 1.10;
 
 * --- (c) %1 t.p. in all sector
 
   p_axp(r,s) = 1.01;
   solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with high technial progress not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
-  if ( execerror, abort "Run-Time error in simultion '1%Tp', in file: %system.fn%, line: %system.incline%");
+  if ( execerror, abort "Run-Time error in simulation '1%Tp', in file: %system.fn%, line: %system.incline%");
   $$batinclude "store_res.gms" "'1%Tp'"
   p_axp(r,s) = 1;
 
@@ -1044,7 +1051,7 @@ $offlisting
   solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with halved output taxes not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
   $$batinclude "store_res.gms" "'half_oTax'"
-  if ( execerror, abort "Run-Time error in simultion 'half_oTax', in file: %system.fn%, line: %system.incline%");
+  if ( execerror, abort "Run-Time error in simulation 'half_oTax', in file: %system.fn%, line: %system.incline%");
   p_oTax(r,c) = p_otax(r,c) * 2.0;
 
 * --- (e) remove factor taxes
@@ -1052,7 +1059,7 @@ $offlisting
   p_fTax(r,f) = eps;
   solve m_cge using mcp;
   abort $ m_cge.sumInfes " Simulation with removed factor taxes not solved without infeasibilities, in file: %system.fn%, line: %system.incline%";
-  if ( execerror, abort "Run-Time error in simultion 'no_fTax', in file: %system.fn%, line: %system.incline%");
+  if ( execerror, abort "Run-Time error in simultaion 'no_fTax', in file: %system.fn%, line: %system.incline%");
   $$batinclude "store_res.gms" "'no_fTax'"
 
   display p_res;
