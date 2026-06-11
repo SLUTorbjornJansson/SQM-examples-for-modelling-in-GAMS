@@ -25,7 +25,7 @@ $offtext
      "Negative demand quantities found in simulation %1, in file: %system.fn%, line: %system.incline%",v_dem.l;
 
   abort $ sum(i, v_p.l(i) lt 0)
-     "Negative demand quantities found in simulation %1, in file: %system.fn%, line: %system.incline%",v_p.l;
+     "Negative prices found in simulation %1, in file: %system.fn%, line: %system.incline%",v_p.l;
 *
 * --- assign results
 *

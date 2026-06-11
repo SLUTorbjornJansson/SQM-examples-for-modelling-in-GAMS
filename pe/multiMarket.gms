@@ -31,10 +31,10 @@ $offtext
   alias(i,j);
 
   Parameters
-    p_supElas(i) "Supply elasticities"   /  pigs 0.5,  poultry 0.3/
-    p_demElas(i) "Demand elasticities"   / pigs -0.2, poultry -0.6 /
-    p_cnstSup(i) "Constant term in supply function"
-    p_cnstDem(i) "Constant term in demand function"
+    p_supElas(i) "Supply elasticities"                          /  pigs 0.5,  poultry 0.3/
+    p_demElas(i) "Demand elasticities"                          / pigs -0.2, poultry -0.6 /
+    p_cnstSup(i) "Constant term in supply functions"
+    p_cnstDem(i) "Constant term in demand functions"
     p_qBase(i)   "Market clearing quantity in base situation"  / pigs 1000, poultry 1000 /
     p_pBase(i)   "Market clearing price in base situation"     / pigs 100, poultry 100 /
     p_subs(i)    "Subsidy"                                     / pigs 0, poultry 0 /
@@ -62,9 +62,8 @@ $offtext
     v_sup(i) =E= v_dem(i);
 
   model m_MultiMarket "The simulation model" / e_sup.v_sup
-                                                e_dem.v_dem
-                                                e_mkt.v_p    /;
-
+                                               e_dem.v_dem
+                                               e_mkt.v_p    /;
   m_MultiMarket.limCol = 0;
   m_MultiMarket.limRow = 0;
 
