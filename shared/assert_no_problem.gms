@@ -1,37 +1,39 @@
+********************************************************************************
 $onText
     @purpose: Test utility. Assert that a set is empty, and if it is not,
               show it's contents, throw an exception and unload memory to a gdx file.
-                
+
     @author: T. Jansson
-    @usage: 
+    @usage:
        $batinclude shared/assert_empty_set.gms init
        ...
        $batinclude shared/assert_empty_set.gms errorPar "errorMessage"
-       
-       where errorPar is the name of the parameter to be tested, and errorMessage is 
-       a text string to be shown in case of an error.
-    
-$offText
 
-$ifi not set scrdir $setLocal scrdir ..\output\temp
+       where errorPar is the name of the parameter to be tested, and errorMessage is
+       a text string to be shown in case of an error.
+
+$offText
+********************************************************************************
+
+  $$ifi not set scrdir $setLocal scrdir ..\output\temp
 
 * --- Determine if the program should just declare symbols or actually process errors
 
-$iftheni.mode "%1"=="init"
+  $$iftheni.mode "%1"=="init"
 
-* --- Check if this include file has already been initialized
+*   --- Check if this include file has already been initialized
 
     $$ifi set problemHandlerHasBeenInitialized $abort "Error in file in file %system.IncParent%. Error handler in assert_no_problem.gms has already been initialized. Include the file with 'init' only once."
 
-* --- Initialize error device
+*   --- Initialize error device
 
-*   Give a file name for unloading data in case of errors
+*   --- Give a file name for unloading data in case of errors
     $$setGlobal ERROR_FILE error.gdx
 
-*   Declare symbols for reporting problems    
+*   --- Declare symbols for reporting problems
     scalar p_problemTol "Tolerance for problems" /1E-6/;
 
-*   Declare generic parameters to hold set elements with problems
+*   --- Declare generic parameters to hold set elements with problems
     parameter p_problem1D(*) "Data or set elements with a problem";
     parameter p_problem2D(*,*) "Data or set elements with a problem";
     parameter p_problem3D(*,*,*) "Data or set elements with a problem";
@@ -47,7 +49,7 @@ $iftheni.mode "%1"=="init"
     $$setGlobal problemHandlerHasBeenInitialized yes
 $else.mode
 
-* --- Check that a set is empty, otherwise unload data and abort with the error message provided by the caller
+*   --- Check that a set is empty, otherwise unload data and abort with the error message provided by the caller
 
     $$ifi not set problemHandlerHasBeenInitialized $abort "Error in file %system.IncParent%. Error handler in assert_no_problem.gms has not been initialized. Include the file with 'init' first."
 
